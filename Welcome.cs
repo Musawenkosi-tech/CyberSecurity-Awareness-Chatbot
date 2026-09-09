@@ -12,11 +12,29 @@ namespace CyberSecurity_Awareness_Chatbot
         public static string welcome()
         {
             Console.WriteLine("Welcome to the Cyber Security Awareness Chatbot!");
-            Console.WriteLine("Please enter your name: ");
-            string userName = Console.ReadLine();
-            Console.WriteLine($"Hello, {userName}! Let's get started with some cyber security awareness questions.");
-            return userName;
-        }
+
+            string userName = "";
+            bool isValid = false;
+
+            while (!isValid)
+            {
+                Console.WriteLine("Please enter your name: ");
+                userName = Console.ReadLine();
+
+                if (string.IsNullOrEmpty(userName))
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Please enter a valid name");
+                    Console.ResetColor();
+                }
+                else {
+                    isValid = true;
+                }
+
+            }
+                Console.WriteLine($"Hello, {userName}! Let's get started or enter 'exit' to leave the program. Feel free to ask me about cyber terms like  password safety, phishing or safe browsing. ");
+                return userName;
+            }
 
         public static void DisplayLogo()
         {
@@ -32,10 +50,10 @@ namespace CyberSecurity_Awareness_Chatbot
         {
             try
             {
-                SoundPlayer player = new SoundPlayer("Audio\\welcome.wav");
+                SoundPlayer player = new SoundPlayer("C:\\Users\\Musa_\\source\\repos\\Programming_ part1\\CyberSecurity Awareness Chatbot\\Audio\\welcome.wav");
                 player.PlaySync();
             }
-            catch (Exception e)
+            catch (Exception )
             {
                 Console.WriteLine("Check file ");
             }
