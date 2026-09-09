@@ -7,14 +7,16 @@ namespace CyberSecurity_Awareness_Chatbot
     {
         static void Main(string[] args)
         {
-            ChatBot chatbot = new ChatBot();
-            Welcome welcome = new Welcome();
+            ChatBot chatBot = new ChatBot();
+            
+        
+            Welcome.recording();
+            Welcome.DisplayLogo();
 
-            welcome.recording();
-            welcome.DisplayLogo();
-            welcome.welcome();
+            string userName = Welcome.welcome();
+            User user = new User(userName);
 
-            chatbot.StartChat();
+            chatBot.StartChat(user.userName);
         }
     }
 }
