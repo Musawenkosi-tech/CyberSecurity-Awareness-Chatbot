@@ -4,7 +4,35 @@
         Title="Cybersecurity Awareness Bot" Height="700" Width="820"
         MinHeight="520" MinWidth="620"
         WindowStartupLocation="CenterScreen"
-        Background="#1E1E2E">
+        Background="#F3F4F6">
+
+    <Window.Resources>
+        <!-- One reusable button style: rounded corners, fades on hover and when disabled -->
+        <Style x:Key="RoundButton" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -17,34 +45,36 @@
             <!-- input area -->
         </Grid.RowDefinitions>
 
-        <!-- Row 0: title header -->
-        <TextBlock Grid.Row="0" Text="CYBERSECURITY AWARENESS BOT"
-                   FontSize="24" FontWeight="Bold" Foreground="#A6E3A1"
-                   HorizontalAlignment="Center" Margin="0,0,0,10"/>
+        <!-- Row 0: title header on a dark blue band -->
+        <Border Grid.Row="0" Background="#1E3A8A" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+            <TextBlock Text="CYBERSECURITY AWARENESS BOT"
+                       FontSize="22" FontWeight="Bold" Foreground="White"
+                       HorizontalAlignment="Center"/>
+        </Border>
 
         <!-- Row 1: History and Clear buttons, on the right -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
-            <Button x:Name="HistoryButton" Content="History" Width="110" Padding="6,4"
-                    Background="#45475A" Foreground="White" BorderThickness="0"
+            <Button x:Name="HistoryButton" Content="History" Width="120" Padding="8,6"
+                    Style="{StaticResource RoundButton}" Background="#64748B"
                     Click="HistoryButton_Click"/>
-            <Button x:Name="ClearButton" Content="Clear" Width="80" Padding="6,4" Margin="8,0,0,0"
-                    Background="#F38BA8" Foreground="#1E1E2E" FontWeight="Bold" BorderThickness="0"
+            <Button x:Name="ClearButton" Content="Clear" Width="80" Padding="8,6" Margin="8,0,0,0"
+                    Style="{StaticResource RoundButton}" Background="#DC2626"
                     Click="ClearButton_Click"/>
         </StackPanel>
 
-        <!-- Row 2: the chat. Two layers share the same space; only one is visible at a time. -->
-        <Border Grid.Row="2" Background="#2A2A3C" BorderBrush="#45475A" BorderThickness="1" CornerRadius="6">
+        <!-- Row 2: the chat on a white card. Two layers share the same space; only one shows at a time. -->
+        <Border Grid.Row="2" Background="White" BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="10">
             <Grid>
                 <!-- Chat bubbles are added to MessagePanel from the code -->
-                <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto" Padding="10">
+                <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto" Padding="12">
                     <StackPanel x:Name="MessagePanel"/>
                 </ScrollViewer>
 
                 <!-- Full history (shown when the History button is pressed) -->
                 <TextBox x:Name="HistoryBox" Visibility="Collapsed" IsReadOnly="True"
                          TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                         FontSize="13" Background="#2A2A3C" Foreground="White"
-                         BorderThickness="0" Padding="10"/>
+                         FontSize="13" Background="White" Foreground="#1F2937"
+                         BorderThickness="0" Padding="12"/>
             </Grid>
         </Border>
 
@@ -54,12 +84,13 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="InputBox" FontSize="14" Padding="8"
-                     Background="#313244" Foreground="White" CaretBrush="White"
-                     BorderBrush="#45475A" KeyDown="InputBox_KeyDown"/>
+            <TextBox x:Name="InputBox" FontSize="14" Padding="10"
+                     Background="White" Foreground="#1F2937" CaretBrush="#1F2937"
+                     BorderBrush="#D1D5DB" VerticalContentAlignment="Center"
+                     KeyDown="InputBox_KeyDown"/>
             <Button x:Name="SendButton" Grid.Column="1" Content="Send"
-                    Width="90" Margin="10,0,0,0" FontSize="14" FontWeight="Bold"
-                    Background="#89B4FA" Foreground="#1E1E2E" BorderThickness="0"
+                    Width="90" Margin="10,0,0,0" FontSize="14" Padding="8,8"
+                    Style="{StaticResource RoundButton}" Background="#2563EB"
                     Click="SendButton_Click"/>
         </Grid>
     </Grid>

@@ -12,7 +12,7 @@ A Windows desktop chatbot (WPF, C#, .NET 8) that teaches South African citizens 
 
 | Feature | What it does |
 |---|---|
-| **GUI** | WPF window with a title header, an ASCII art banner, chat bubbles (bot on the left, you on the right) and a typing effect |
+| **GUI** | Light-themed WPF window with a title header, chat bubbles (bot on the left, you on the right) and a typing effect |
 | **Clear and History** | **Clear** wipes the chat on screen; **History** shows every message from the session with timestamps, even after a clear |
 | **Voice greeting** | A recorded WAV welcome message plays when the app starts |
 | **Personalised greeting** | Asks for your name (with validation) and uses it in the conversation |

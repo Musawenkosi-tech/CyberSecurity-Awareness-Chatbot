@@ -26,14 +26,14 @@ namespace CyberSecurity_Awareness_Chatbot
         private const int MaxNameLength = 30;
         private const int TypingDelayMs = 10;   // pause between letters for the typing effect
 
-        // Colours: the name label and the bubble background for each speaker
-        private static readonly Brush BotColour = Brushes.LightGreen;
-        private static readonly Brush UserColour = Brushes.LightSkyBlue;
-        private static readonly Brush BotBubble = new SolidColorBrush(Color.FromRgb(49, 50, 68));
-        private static readonly Brush UserBubble = new SolidColorBrush(Color.FromRgb(44, 62, 94));
-        private static readonly Brush ErrorBubble = new SolidColorBrush(Color.FromRgb(74, 42, 51));
-
-      
+        // Colours (light theme): bot bubbles are light grey, user bubbles are blue
+        private static readonly Brush BotNameColour = Hex("#15803D");   // green name label
+        private static readonly Brush UserNameColour = Hex("#DBEAFE");  // pale blue name label
+        private static readonly Brush BotBubble = Hex("#F1F5F9");
+        private static readonly Brush UserBubble = Hex("#2563EB");
+        private static readonly Brush ErrorBubble = Hex("#FEE2E2");
+        private static readonly Brush ErrorText = Hex("#991B1B");
+        private static readonly Brush DarkText = Hex("#1F2937");
 
         public MainWindow()
         {
@@ -41,11 +41,16 @@ namespace CyberSecurity_Awareness_Chatbot
             Loaded += MainWindow_Loaded;
         }
 
+        /// <summary>Turns a hex colour like "#2563EB" into a brush.</summary>
+        private static SolidColorBrush Hex(string colour)
+        {
+            return (SolidColorBrush)new BrushConverter().ConvertFromString(colour)!;
+        }
+
         /// <summary>Runs once the window is showing: plays the voice greeting and welcomes the user.</summary>
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             MessagePanel.Children.Clear();
-            AddBanner();
 
             // wait: false so the window doesn't freeze while the audio plays
             _audio.PlayGreeting(wait: false);
@@ -77,7 +82,6 @@ namespace CyberSecurity_Awareness_Chatbot
         {
             ShowChatView();
             MessagePanel.Children.Clear();
-            AddBanner();
             AddNote("Chat cleared. Press History to see earlier messages.");
         }
 
@@ -196,13 +200,18 @@ namespace CyberSecurity_Awareness_Chatbot
             // Keep a copy for the History view
             _history.Add($"[{DateTime.Now:HH:mm}] {sender}: {message}");
 
-            // The sender's name, in bold and in their colour
+            // Pick the colours for this bubble
+            Brush bubbleColour = isError ? ErrorBubble : (isBot ? BotBubble : UserBubble);
+            Brush nameColour = isError ? ErrorText : (isBot ? BotNameColour : UserNameColour);
+            Brush textColour = isError ? ErrorText : (isBot ? DarkText : Brushes.White);
+
+            // The sender's name, in bold
             TextBlock nameLabel = new TextBlock
             {
                 Text = sender,
                 FontWeight = FontWeights.Bold,
                 FontSize = 12,
-                Foreground = isBot ? BotColour : UserColour,
+                Foreground = nameColour,
                 Margin = new Thickness(0, 0, 0, 2)
             };
 
@@ -210,7 +219,7 @@ namespace CyberSecurity_Awareness_Chatbot
             TextBlock body = new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = Brushes.White,
+                Foreground = textColour,
                 FontSize = 14
             };
 
@@ -223,9 +232,9 @@ namespace CyberSecurity_Awareness_Chatbot
             Border bubble = new Border
             {
                 Child = content,
-                Background = isError ? ErrorBubble : (isBot ? BotBubble : UserBubble),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(12, 8, 12, 8),
+                Background = bubbleColour,
+                CornerRadius = new CornerRadius(12),
+                Padding = new Thickness(14, 10, 14, 10),
                 Margin = new Thickness(0, 0, 0, 10),
                 MaxWidth = 520,
                 HorizontalAlignment = isBot ? HorizontalAlignment.Left : HorizontalAlignment.Right
@@ -247,20 +256,6 @@ namespace CyberSecurity_Awareness_Chatbot
             }
 
             ChatScroll.ScrollToEnd();
-        }
-
-        /// <summary>Shows the ASCII art at the top of the chat.</summary>
-        private void AddBanner()
-        {
-            MessagePanel.Children.Add(new TextBlock
-            {
-                Text = Banner,
-                FontFamily = new FontFamily("Consolas"),
-                FontSize = 13,
-                Foreground = BotColour,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 12)
-            });
         }
 
         /// <summary>Adds a small grey centred note (not saved in History).</summary>
