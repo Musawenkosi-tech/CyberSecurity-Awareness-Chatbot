@@ -1,31 +1,58 @@
 ﻿<Window x:Class="CyberSecurity_Awareness_Chatbot.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Cybersecurity Awareness Bot" Height="600" Width="800"
+        Title="Cybersecurity Awareness Bot" Height="700" Width="820"
+        MinHeight="520" MinWidth="620"
+        WindowStartupLocation="CenterScreen"
         Background="#1E1E2E">
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <!-- logo -->
             <RowDefinition Height="Auto"/>
+            <!-- section header -->
+            <RowDefinition Height="*"/>
+            <!-- chat history -->
+            <RowDefinition Height="Auto"/>
+            <!-- input area -->
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="CYBERSECURITY AWARENESS BOT"
-                   FontSize="24" FontWeight="Bold" Foreground="#A6E3A1"
-                   HorizontalAlignment="Center" Margin="0,0,0,10"/>
+        <!-- Row 0: ASCII logo (Consolas = monospaced, so the art stays aligned) -->
+        <Border Grid.Row="0" Background="#11111B" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+            <TextBlock xml:space="preserve" FontFamily="Consolas" FontSize="14"
+                       Foreground="#A6E3A1" HorizontalAlignment="Center">╔═══════════════════════════════════════╗
+║   [#]  CYBERSECURITY AWARENESS  [#]   ║
+║                  BOT                  ║
+║         Stay smart. Stay safe.        ║
+╚═══════════════════════════════════════╝
+            \  (o_o)  /
+             \_/|_|\_/</TextBlock>
+        </Border>
 
-        <TextBox x:Name="ChatLog" Grid.Row="1" IsReadOnly="True"
-                 TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                 FontSize="14" Background="#2A2A3C" Foreground="White" Padding="10"/>
+        <!-- Row 1: section header with a divider line under it -->
+        <Border Grid.Row="1" BorderBrush="#45475A" BorderThickness="0,0,0,1" Margin="0,0,0,8" Padding="4,0,0,6">
+            <TextBlock Text="CONVERSATION" FontSize="12" FontWeight="Bold" Foreground="#89B4FA"/>
+        </Border>
 
-        <Grid Grid.Row="2" Margin="0,10,0,0">
+        <!-- Row 2: chat history. A RichTextBox lets each message have its own colours. -->
+        <RichTextBox x:Name="ChatLog" Grid.Row="2" IsReadOnly="True"
+                     VerticalScrollBarVisibility="Auto"
+                     FontSize="14" Background="#2A2A3C" Foreground="White"
+                     BorderBrush="#45475A" Padding="10"/>
+
+        <!-- Row 3: input area -->
+        <Grid Grid.Row="3" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="InputBox" FontSize="14" Padding="6" KeyDown="InputBox_KeyDown"/>
+            <TextBox x:Name="InputBox" FontSize="14" Padding="8"
+                     Background="#313244" Foreground="White" CaretBrush="White"
+                     BorderBrush="#45475A" KeyDown="InputBox_KeyDown"/>
             <Button x:Name="SendButton" Grid.Column="1" Content="Send"
-                    Width="90" Margin="10,0,0,0" Click="SendButton_Click"/>
+                    Width="90" Margin="10,0,0,0" FontSize="14" FontWeight="Bold"
+                    Background="#89B4FA" Foreground="#1E1E2E" BorderThickness="0"
+                    Click="SendButton_Click"/>
         </Grid>
     </Grid>
 </Window>
