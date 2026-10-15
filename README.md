@@ -1,238 +1,127 @@
-# CyberSecurity Awareness Chatbot
+# Cybersecurity Awareness Chatbot (Part 2: WPF GUI)
 
+**Module:** PROG6221 – Programming 2A | **Author:** Musawenkosi Mhlambi
 
-The Cybersecurity Awareness Chatbot is an educational application designed to help users learn about common cybersecurity threats and safe online practices. The chatbot provides users with simple, accessible information about topics such as phishing, passwords, malware, social engineering, online privacy, and account security.
+A Windows desktop chatbot (WPF, C#, .NET 8) that teaches South African citizens about staying safe online. Part 2 turns the Part 1 console bot into a graphical application and adds keyword recognition, random responses, conversation flow, memory and sentiment detection.
 
-The purpose of this project is to improve cybersecurity awareness and encourage users to develop safer digital habits.
+**Video presentation:** <!-- TODO: paste your unlisted YouTube link here -->
+
+---
 
 ## Features
 
-- Interactive chatbot conversation.
-- Provides cybersecurity-related questions and answers.
-- Explains common online security threats.
-- Gives users practical cybersecurity advice.
-- Covers topics such as:
-  - Phishing
-  - Password security
-  - Malware
-  - Social engineering
-  - Online privacy
-  - Safe browsing
-  - Two-factor authentication
-  - Cyberbullying and online safety
-- Allows users to exit the chatbot when they have finished.
-- Uses a simple and user-friendly interface.
-- Designed for educational and awareness purposes.
+| Feature | What it does |
+|---|---|
+| **GUI** | WPF window with a title header, an ASCII art banner, chat bubbles (bot on the left, you on the right) and a typing effect |
+| **Clear and History** | **Clear** wipes the chat on screen; **History** shows every message from the session with timestamps, even after a clear |
+| **Voice greeting** | A recorded WAV welcome message plays when the app starts |
+| **Personalised greeting** | Asks for your name (with validation) and uses it in the conversation |
+| **Keyword recognition** | Recognises 8 topics: password, phishing, browsing, malware, privacy, scam, ransomware, social engineering |
+| **Random responses** | Every topic has several answers stored in a list, and the bot picks one at random without repeating the last one |
+| **Conversation flow** | Follow-ups like "tell me more", "another tip" or "I don't understand" stay on the current topic |
+| **Memory and recall** | Remembers your name, your favourite topic and the topics you've asked about, and brings them up later |
+| **Sentiment detection** | Spots *worried*, *frustrated* and *curious* messages, responds with empathy and shares a tip straight away |
+| **Error handling** | Empty or unknown input gets a friendly default reply and never crashes the app |
 
-## Project Purpose
+---
 
-Many users are exposed to cyber threats because they are unfamiliar with basic online safety practices. This chatbot provides an easy way for users to ask cybersecurity-related questions and receive understandable explanations.
+## Requirements
 
-The project demonstrates how software can be used to educate users and promote responsible behaviour when using digital platforms.
+- Windows 10 or 11
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- Visual Studio 2022 with the **.NET desktop development** workload (recommended)
 
-## Technologies Used
+## How to run
 
-Update this section according to the technologies used in the project.
+**Visual Studio**
+1. Clone the repository: `git clone <your-repository-url>`
+2. Open the `.sln` file.
+3. Press **F5** (or **Build → Rebuild Solution**, then **Start**).
 
-- Programming language: `C#`
-- Application type: Console application
-- Development environment: Visual Studio
-- Version control: Git and GitHub
-- User interaction: Text-based chatbot interface
-
-## Getting Started
-
-### Prerequisites
-
-Before running the project, install the following:
-
-- Visual Studio
-- .NET SDK
-- Git
-
-You can download Visual Studio from:
-
-[https://visualstudio.microsoft.com/](https://visualstudio.microsoft.com/)
-
-### Clone the Repository
-
-Open a terminal or command prompt and run:
-
-```bash
-git clone [https://github.com/Musawenkosi-tech/CyberSecurity-Awareness-Chatbot.git](https://github.com/Musawenkosi-tech/CyberSecurity-Awareness-Chatbot.git)
+**Command line**
 ```
-
-Navigate to the project folder:
-
-```bash
-cd CyberSecurity-Awareness-Chatbot
-```
-
-### Run the Application
-
-Open the project in Visual Studio and run the application using the **Start** button.
-
-Alternatively, if the project is a .NET console application, run:
-
-```bash
+cd CyberSecurity_Awareness_Chatbot
 dotnet run
 ```
 
-## How to Use the Chatbot
+The voice greeting file (`Audio/welcome.wav`) is copied next to the program automatically when you build. Turn your volume on to hear it.
 
-1. Start the application.
-2. Read the chatbot's welcome message.
-3. Enter your name if requested.
-4. Select whether you would like to ask a cybersecurity question.
-5. Type a cybersecurity-related question.
-6. Read the chatbot's response.
-7. Continue asking questions or type `exit` to close the application.
-8. Follow the chatbot's instructions to end the conversation.
+---
 
-### Example Interaction
+## How to use the chatbot
 
-```text
-Cybersecurity Awareness Chatbot
-What is your name? Alex
+1. Wait for the welcome message, then type your **name** and press **Enter** or click **Send**.
+2. Ask about any topic, for example `phishing`, `tell me about passwords` or `what is ransomware`.
+3. Ask follow-ups like `tell me more`, `another tip` or `I'm confused`.
+4. Tell the bot what you care about: `I'm interested in privacy`.
+5. Ask `what do you remember about me?` to see what it has stored.
+6. Type `exit` to leave.
 
-Hello Alex! How can I help you today?
+### Example conversation
 
-User: What is phishing?
+```
+Bot: Welcome to the Cybersecurity Awareness Bot! Please enter your name.
+You: Musa
+Bot: Hello, Musa! Ask me about passwords, phishing, safe browsing, ...
 
-Bot: Phishing is a cyberattack where criminals send fake messages
-to trick people into revealing sensitive information such as passwords
-or banking details.
+Musa: phishing
+Bot: Check the sender's real email address, not just the display name. ...
 
-User: How can I create a strong password?
+Musa: tell me more
+Bot: Hover over a link before clicking it. ...
 
-Bot: Use a long password containing a combination of uppercase letters,
-lowercase letters, numbers, and special characters. Avoid using
-personal information.
+Musa: I'm interested in privacy
+Bot: Great! I'll remember that you're interested in privacy. It's a crucial part of staying safe online.
 
-User: exit
+Musa: I'm worried about online scams
+Bot: It's completely understandable to feel that way. ...
+     Tip: Never pay or share details under pressure. ...
 
-Bot: Thank you for using the Cybersecurity Awareness Chatbot. Stay safe online!
+Musa: what do you remember about me?
+Bot: Here's what I remember: your name is Musa. You're interested in privacy. We've talked about: phishing, scam.
 ```
 
-## Cybersecurity Topics
+---
 
-The chatbot focuses on several important cybersecurity concepts.
+## Project structure
 
-### Phishing
-
-Phishing involves fraudulent emails, messages, or websites designed to steal personal information. Users should check links carefully and avoid sharing sensitive information through suspicious messages.
-
-### Password Security
-
-Users should create strong, unique passwords for different accounts. Password managers and multi-factor authentication can provide additional protection.
-
-### Malware
-
-Malware is malicious software that can damage devices, steal information, or give attackers unauthorised access to a system.
-
-### Social Engineering
-
-Social engineering manipulates people into revealing confidential information or performing unsafe actions.
-
-### Online Privacy
-
-Users should limit the amount of personal information they share online and review the privacy settings of their accounts.
-
-## Project Structure
-
-The project structure may look similar to the following:
-
-```text
-CyberSecurity-Awareness-Chatbot/
-│
-├── Program.cs
-├── CyberSecurity-Awareness-Chatbot.csproj
-├── README.md
-└── ...
+```
+CyberSecurity_Awareness_Chatbot/
+├── App.xaml / App.xaml.cs              Application entry point
+├── MainWindow.xaml / .xaml.cs          The chat window (layout, colours, typing effect)
+├── Bot/
+│   └── ChatBot.cs                      The chatbot "brain" (no UI code)
+├── Models/
+│   └── User.cs                         The user's name and what the bot remembers
+├── Services/
+│   └── AudioService.cs                 Plays the voice greeting
+└── Audio/
+    └── welcome.wav                     Recorded greeting
 ```
 
-The exact structure may differ depending on the version of the project.
+### How the code works
 
-## Learning Outcomes
+- **`MainWindow`** only handles what the user sees and clicks. It sends text to `ChatBot` and displays the reply.
+- **`ChatBot.GetResponse`** passes the message through a list of **delegate** handlers (`ResponseHandler`): small talk, memory, sentiment, topic, confusion, follow-up and general tip. The first handler that returns a reply wins; a handler returns `null` when the message isn't for it.
+- **Collections:** topics are stored in a `Dictionary<string, List<string>>` (keyword → possible answers), and tips in a `List<string>`. One `Random` instance picks answers.
+- **Memory:** `ChatBot` keeps the current topic for follow-ups, and `User` stores the favourite topic and a list of topics discussed.
+- **Sentiment:** two dictionaries map each mood to its trigger words and to an empathetic reply.
 
-This project demonstrates the following skills:
+---
 
-- Console application development.
-- Conditional statements and loops.
-- User input and validation.
-- String comparison and text processing.
-- Basic chatbot logic.
-- Object-oriented programming concepts.
-- Cybersecurity awareness.
-- Git and GitHub version control.
-- Technical documentation.
+## Continuous Integration
 
-## Limitations
+A GitHub Actions workflow (`.github/workflows/dotnet.yml`) restores and builds the project on every push.
 
-- The chatbot provides general cybersecurity information only.
-- It may not understand questions outside its programmed topics.
-- It does not replace professional cybersecurity advice.
-- It does not perform real-time security monitoring.
-- It does not detect malware, scan devices, or investigate cyberattacks.
-- Responses are based on predefined information.
+<!-- TODO: add a screenshot of a green CI run here, e.g. ![CI passing](docs/ci-green.png) -->
 
-## Future Improvements
+## Releases
 
-Possible future improvements include:
+| Version | Notes |
+|---|---|
+| **v2.0** | <!-- TODO: e.g. WPF GUI, keywords, random responses, flow, memory, sentiment --> |
+| **v2.1** | <!-- TODO: e.g. GUI polish: coloured messages, dividers, typing effect --> |
 
-- Adding more cybersecurity topics and responses.
-- Implementing natural language processing.
-- Adding voice input and text-to-speech functionality.
-- Creating a graphical user interface.
-- Adding a database for storing chatbot content.
-- Supporting multiple languages.
-- Adding quizzes to test the user's cybersecurity knowledge.
-- Providing links to trusted cybersecurity resources.
-- Improving the chatbot's ability to understand different question formats.
-- Adding automated unit tests.
+## Part 1
 
-## Security Disclaimer
-
-This chatbot is intended for educational and awareness purposes only. The information provided should not be considered professional cybersecurity, legal, or financial advice.
-
-Users should contact a qualified cybersecurity professional or the relevant service provider when dealing with an active security incident.
-
-## Contributing
-
-Contributions are welcome.
-
-To contribute:
-
-1. Fork the repository.
-2. Create a new branch.
-
-```bash
-git checkout -b feature/improvement
-```
-
-3. Make your changes.
-4. Commit your changes.
-
-```bash
-git commit -m "Add cybersecurity improvement"
-```
-
-5. Push the branch.
-
-```bash
-git push origin feature/improvement
-```
-
-6. Open a pull request.
-
-## Author
-
-Developed by **Musawenkosi-tech**.
-
-GitHub repository:
-
-[Cybersecurity Awareness Chatbot](https://github.com/Musawenkosi-tech/CyberSecurity-Awareness-Chatbot)
-
-## License
-
-This project is intended for educational purposes. Add a specific license here if the repository uses one, such as the MIT License.
+The original console version is preserved under the `part1-final` tag / `v1.0` release.
