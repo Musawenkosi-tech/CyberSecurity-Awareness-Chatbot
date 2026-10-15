@@ -3,39 +3,31 @@ using CyberSecurity_Awareness_Chatbot.Models;
 
 namespace CyberSecurity_Awareness_Chatbot.Bot
 {
-    /// <summary>
-    /// A delegate: a "job description" for a method. Any method that takes a message
-    /// and returns a reply (or null if it isn't for them) can be stored in a list.
-    /// </summary>
+    
     public delegate string? ResponseHandler(string message);
 
-    /// <summary>
-    /// The chatbot's "brain". It takes text in and gives text out, and never
-    /// touches the UI. That separation lets the GUI (and later features) reuse it.
-    /// </summary>
+    
     public class ChatBot
     {
         public const string DefaultResponse =
             "I didn't quite understand that. Could you rephrase?";
 
-        // Created ONCE and reused. Making a new Random() on every message can
-        // return the same "random" number when messages arrive close together.
+        
         private readonly Random _random = new Random();
 
-        // --- Conversation flow: what the bot remembers between messages ---
-        private string? _currentTopic;   // e.g. "phishing" (null until a topic is discussed)
-        private string? _lastResponse;   // so we don't repeat the same answer twice in a row
+        
+        private string? _currentTopic;   
+        private string? _lastResponse;   
 
-        // Phrases that mean "stay on the same topic"
+       
         private static readonly string[] FollowUpWords =
             { "another", "more", "explain", "again", "next", "continue" };
 
-        // Phrases that show the user is confused or unsure
+        
         private static readonly string[] ConfusionPhrases =
             { "confused", "don't understand", "dont understand", "what do you mean", "unclear", "not sure what" };
 
-        // --- Sentiment: mood -> words that suggest it, and mood -> empathetic reply ---
-        // Short stems like "worr" also match "worried" and "worry".
+        
         private readonly Dictionary<string, string[]> _moodWords = new()
         {
             { "worried", new[] { "worr", "scared", "afraid", "anxious", "nervous", "concerned", "overwhelm", "unsafe" } },
@@ -50,18 +42,18 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             { "curious", "Great question! Curiosity is one of the best security tools you can have. Here's something worth knowing." }
         };
 
-        /// <summary>The topic currently being discussed (used later for memory and the GUI).</summary>
+        
         public string? CurrentTopic => _currentTopic;
 
-        // --- Memory: what the bot remembers about the user ---
-        private User? _user;        // set by the window once the user has entered their name
-        private int _replyCount;    // used to decide when to add a personal recall line
+        
+        private User? _user;        
+        private int _replyCount;    
 
-        // Phrases that mean "this is something I'm interested in"
+        
         private static readonly string[] InterestPhrases =
             { "interested in", "i like", "i love", "favourite", "favorite", "i care about", "i want to learn about" };
 
-        // Personal tip shown later: "As someone interested in {topic}, {tip}"
+       
         private readonly Dictionary<string, string> _recallTips = new()
         {
             { "password", "you might want to check that your most important accounts each have a unique password." },
@@ -74,32 +66,31 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             { "social engineering", "stay alert for unexpected requests that ask for codes or passwords." }
         };
 
-        /// <summary>Gives the bot the current user so it can remember and use their details.</summary>
+        
         public void SetUser(User user)
         {
             _user = user;
         }
 
-        // --- Delegates: each handler is a small method that either returns a reply or null ---
+        
         private readonly List<ResponseHandler> _handlers;
 
         public ChatBot()
         {
-            // Order matters: the first handler to return a reply wins.
+            
             _handlers = new List<ResponseHandler>
             {
-                HandleSmallTalk,    // "how are you", "what's your purpose"
-                HandleMemory,       // "I'm interested in privacy", "what do you remember"
-                HandleSentiment,    // "I'm worried about scams"
-                HandleTopic,        // "tell me about phishing"
-                HandleConfusion,    // "I don't understand"
-                HandleFollowUp,     // "tell me more", "another tip"
-                HandleGeneralTip    // "give me a tip"
+                HandleSmallTalk,    
+                HandleMemory,       
+                HandleSentiment,    
+                HandleTopic,        
+                HandleConfusion,    
+                HandleFollowUp,     
+                HandleGeneralTip    
             };
         }
 
-        // Topic keyword -> LIST of possible answers. The bot picks one at random.
-        // Adding a topic = one new entry. Adding variety = one more string in a list.
+        
         private readonly Dictionary<string, List<string>> _topics = new()
         {
             { "password", new List<string>
@@ -184,10 +175,10 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return ContainsWord(input, "exit") || ContainsWord(input, "quit") || ContainsWord(input, "bye");
         }
 
-        /// <summary>Works out the bot's reply to whatever the user typed.</summary>
+        
         public string GetResponse(string? input)
         {
-            // Input validation: empty or whitespace-only entries
+           
             if (string.IsNullOrWhiteSpace(input))
             {
                 return "I didn't catch that. How can I help you today?";
@@ -195,7 +186,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
 
             string message = input.Trim().ToLowerInvariant();
 
-            // Ask each handler in turn. The first one that returns text wins.
+           
             foreach (ResponseHandler handler in _handlers)
             {
                 string? reply = handler(message);
@@ -205,15 +196,14 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                 }
             }
 
-            // Nobody understood the message
+            
             return DefaultResponse;
         }
 
-        // ---------------------------------------------------------------
-        // Handlers. Each returns a reply, or null meaning "not for me".
-        // ---------------------------------------------------------------
+       
 
-        /// <summary>Basic conversation questions from Part 1.</summary>
+        
+        
         private string? HandleSmallTalk(string message)
         {
             if (message.Contains("how are you"))
@@ -235,16 +225,16 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return null;
         }
 
-        /// <summary>Stores what the user is interested in, or recalls what we know.</summary>
+       
         private string? HandleMemory(string message)
         {
-            // Memory check: "what do you remember about me?"
+            
             if (message.Contains("remember") || message.Contains("know about me") || message.Contains("what have we talked"))
             {
                 return DescribeMemory();
             }
 
-            // Memory store: "I'm interested in privacy"
+            
             if (_user != null && InterestPhrases.Any(phrase => message.Contains(phrase)))
             {
                 string? interest = FindTopic(message);
@@ -259,10 +249,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return null;
         }
 
-        /// <summary>
-        /// Detects the user's mood, responds with empathy, then shares a tip straight away
-        /// so the user doesn't have to ask again.
-        /// </summary>
+        
         private string? HandleSentiment(string message)
         {
             string? mood = DetectMood(message);
@@ -271,7 +258,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                 return null;
             }
 
-            // Use the topic they mentioned, otherwise the one we were already discussing
+            
             string? topic = FindTopic(message) ?? _currentTopic;
             string tip;
             if (topic != null)
@@ -288,7 +275,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return _moodReplies[mood] + "\n\nTip: " + tip;
         }
 
-        /// <summary>Topic keywords: remember the topic, then pick ONE random answer from its list.</summary>
+        
         private string? HandleTopic(string message)
         {
             string? topic = FindTopic(message);
@@ -302,7 +289,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return WithRecall(PickRandom(_topics[topic]));
         }
 
-        /// <summary>Confusion: explain the current topic again, differently.</summary>
+        
         private string? HandleConfusion(string message)
         {
             if (!ConfusionPhrases.Any(phrase => message.Contains(phrase)))
@@ -317,7 +304,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return "No worries! Which topic would you like me to explain? " + TopicList();
         }
 
-        /// <summary>Follow-ups ("tell me more", "another tip"): stay on the current topic.</summary>
+       
         private string? HandleFollowUp(string message)
         {
             if (!FollowUpWords.Any(word => ContainsWord(message, word)))
@@ -336,22 +323,17 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return "Happy to go further! Which topic should we start with? " + TopicList();
         }
 
-        /// <summary>A plain request for a tip.</summary>
+        
         private string? HandleGeneralTip(string message)
         {
             return message.Contains("tip") ? PickRandom(_generalTips) : null;
         }
 
-        /// <summary>
-        /// Picks one item from a list at random, avoiding the answer we just gave
-        /// so "another tip" never repeats itself.
-        /// </summary>
         private string PickRandom(List<string> options)
         {
             string choice;
             do
             {
-                // Next(n) returns 0 up to n-1, which matches the valid list positions
                 choice = options[_random.Next(options.Count)];
             }
             while (options.Count > 1 && choice == _lastResponse);
@@ -360,7 +342,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return choice;
         }
 
-        /// <summary>Returns "worried", "frustrated" or "curious" if the message sounds like it, otherwise null.</summary>
+        
         private string? DetectMood(string message)
         {
             foreach (KeyValuePair<string, string[]> mood in _moodWords)
@@ -373,7 +355,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return null;
         }
 
-        /// <summary>Finds which known topic (if any) appears in the message.</summary>
+        
         private string? FindTopic(string message)
         {
             foreach (string key in _topics.Keys)
@@ -386,15 +368,13 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return null;
         }
 
-        /// <summary>", Name" when we know the user's name, otherwise nothing.</summary>
+        
         private string NameSuffix()
         {
             return _user != null ? $", {_user.Name}" : "";
         }
 
-        /// <summary>
-        /// Every third reply, adds a personal line based on the user's favourite topic.
-        /// </summary>
+        
         private string WithRecall(string reply)
         {
             _replyCount++;
@@ -407,7 +387,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return reply;
         }
 
-        /// <summary>Summarises everything the bot remembers about the user.</summary>
+        
         private string DescribeMemory()
         {
             if (_user == null)
@@ -428,15 +408,13 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return summary;
         }
 
-        /// <summary>The available topics as readable text.</summary>
+       
         private string TopicList()
         {
             return "You can ask about: " + string.Join(", ", _topics.Keys) + ".";
         }
 
-        /// <summary>
-        /// Whole-word match, so "exit" matches "exit" but not "exited" or "existing".
-        /// </summary>
+       
         private static bool ContainsWord(string? text, string word)
         {
             if (string.IsNullOrWhiteSpace(text))

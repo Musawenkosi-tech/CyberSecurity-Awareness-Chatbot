@@ -8,32 +8,29 @@ using CyberSecurity_Awareness_Chatbot.Services;
 
 namespace CyberSecurity_Awareness_Chatbot
 {
-    /// <summary>
-    /// The chat window. It only handles what the user sees and clicks;
-    /// all the thinking is done by ChatBot.
-    /// </summary>
+    
     public partial class MainWindow : Window
     {
         private readonly ChatBot _bot = new ChatBot();
         private readonly AudioService _audio = new AudioService();
-        private User? _user;            // null until the user has entered their name
-        private bool _chatEnded;        // true once the user types "exit"
-        private bool _showingHistory;   // true while the History view is open
+        private User? _user;            
+        private bool _chatEnded;       
+        private bool _showingHistory;   
 
-        // Every message is also saved here, so the History button still works after Clear
+        
         private readonly List<string> _history = new List<string>();
 
         private const int MaxNameLength = 30;
-        private const int TypingDelayMs = 10;   // pause between letters for the typing effect
+        private const int TypingDelayMs = 10;   
 
-        // Colours (light theme): bot bubbles are light grey, user bubbles are blue
-        private static readonly Brush BotNameColour = Hex("#15803D");   // green name label
-        private static readonly Brush UserNameColour = Hex("#DBEAFE");  // pale blue name label
-        private static readonly Brush BotBubble = Hex("#F1F5F9");
-        private static readonly Brush UserBubble = Hex("#2563EB");
-        private static readonly Brush ErrorBubble = Hex("#FEE2E2");
-        private static readonly Brush ErrorText = Hex("#991B1B");
-        private static readonly Brush DarkText = Hex("#1F2937");
+        // Colours: the name label and the bubble background for each speaker
+        private static readonly Brush BotColour = Brushes.LightGreen;
+        private static readonly Brush UserColour = Brushes.LightSkyBlue;
+        private static readonly Brush BotBubble = new SolidColorBrush(Color.FromRgb(49, 50, 68));
+        private static readonly Brush UserBubble = new SolidColorBrush(Color.FromRgb(44, 62, 94));
+        private static readonly Brush ErrorBubble = new SolidColorBrush(Color.FromRgb(74, 42, 51));
+
+      
 
         public MainWindow()
         {
@@ -41,18 +38,12 @@ namespace CyberSecurity_Awareness_Chatbot
             Loaded += MainWindow_Loaded;
         }
 
-        /// <summary>Turns a hex colour like "#2563EB" into a brush.</summary>
-        private static SolidColorBrush Hex(string colour)
-        {
-            return (SolidColorBrush)new BrushConverter().ConvertFromString(colour)!;
-        }
-
         /// <summary>Runs once the window is showing: plays the voice greeting and welcomes the user.</summary>
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             MessagePanel.Children.Clear();
 
-            // wait: false so the window doesn't freeze while the audio plays
+            
             _audio.PlayGreeting(wait: false);
 
             SetInputEnabled(false);
@@ -60,9 +51,7 @@ namespace CyberSecurity_Awareness_Chatbot
             SetInputEnabled(true);
         }
 
-        // ---------------------------------------------------------------
-        // Buttons
-        // ---------------------------------------------------------------
+       
 
         private async void SendButton_Click(object sender, RoutedEventArgs e)
         {
@@ -77,7 +66,7 @@ namespace CyberSecurity_Awareness_Chatbot
             }
         }
 
-        /// <summary>Clears the chat on screen. The History button still has every message.</summary>
+        
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             ShowChatView();
@@ -85,7 +74,6 @@ namespace CyberSecurity_Awareness_Chatbot
             AddNote("Chat cleared. Press History to see earlier messages.");
         }
 
-        /// <summary>Switches between the chat and the full message history.</summary>
         private void HistoryButton_Click(object sender, RoutedEventArgs e)
         {
             if (_showingHistory)
@@ -111,11 +99,7 @@ namespace CyberSecurity_Awareness_Chatbot
             _showingHistory = false;
         }
 
-        // ---------------------------------------------------------------
-        // Handling what the user types
-        // ---------------------------------------------------------------
-
-        /// <summary>Called when the user presses Send or Enter.</summary>
+       
         private async Task HandleInput()
         {
             string text = InputBox.Text.Trim();
@@ -123,12 +107,12 @@ namespace CyberSecurity_Awareness_Chatbot
 
             ShowChatView();
 
-            // Switch the input off while the bot is "typing" so messages can't overlap
+           
             SetInputEnabled(false);
 
             if (string.IsNullOrWhiteSpace(text))
             {
-                // Input validation: empty entries
+                
                 string error = _user == null ? "Please enter a valid name." : "How can I help you today?";
                 await AddMessage("Bot", error, isBot: true, isError: true);
             }
@@ -147,7 +131,7 @@ namespace CyberSecurity_Awareness_Chatbot
             }
         }
 
-        /// <summary>The first message the user sends is their name.</summary>
+        
         private async Task HandleName(string text)
         {
             if (text.Length > MaxNameLength)
@@ -158,7 +142,7 @@ namespace CyberSecurity_Awareness_Chatbot
             }
 
             _user = new User(text);
-            _bot.SetUser(_user); // lets the bot remember details about this user
+            _bot.SetUser(_user); 
 
             await AddMessage("You", text, isBot: false, typing: false);
             await AddMessage("Bot",
@@ -166,7 +150,7 @@ namespace CyberSecurity_Awareness_Chatbot
                 isBot: true);
         }
 
-        /// <summary>Every message after the name goes to the chatbot.</summary>
+        
         private async Task HandleChat(User user, string text)
         {
             await AddMessage(user.Name, text, isBot: false, typing: false);
@@ -178,7 +162,7 @@ namespace CyberSecurity_Awareness_Chatbot
                 InputBox.IsEnabled = false;
                 SendButton.IsEnabled = false;
 
-                // Clear and History stay usable after the chat has ended
+                
                 ClearButton.IsEnabled = true;
                 HistoryButton.IsEnabled = true;
                 return;
@@ -187,25 +171,13 @@ namespace CyberSecurity_Awareness_Chatbot
             await AddMessage("Bot", _bot.GetResponse(text), isBot: true);
         }
 
-        // ---------------------------------------------------------------
-        // Drawing the chat
-        // ---------------------------------------------------------------
-
-        /// <summary>
-        /// Adds one chat bubble. Bot messages sit on the left, the user's on the right.
-        /// With typing = true the letters appear one at a time.
-        /// </summary>
+        
         private async Task AddMessage(string sender, string message, bool isBot, bool typing = true, bool isError = false)
         {
-            // Keep a copy for the History view
+            
             _history.Add($"[{DateTime.Now:HH:mm}] {sender}: {message}");
 
-            // Pick the colours for this bubble
-            Brush bubbleColour = isError ? ErrorBubble : (isBot ? BotBubble : UserBubble);
-            Brush nameColour = isError ? ErrorText : (isBot ? BotNameColour : UserNameColour);
-            Brush textColour = isError ? ErrorText : (isBot ? DarkText : Brushes.White);
-
-            // The sender's name, in bold
+            // The sender's name, in bold and in their colour
             TextBlock nameLabel = new TextBlock
             {
                 Text = sender,
@@ -215,7 +187,7 @@ namespace CyberSecurity_Awareness_Chatbot
                 Margin = new Thickness(0, 0, 0, 2)
             };
 
-            // The message text (starts empty so it can be typed out)
+            
             TextBlock body = new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
@@ -223,12 +195,12 @@ namespace CyberSecurity_Awareness_Chatbot
                 FontSize = 14
             };
 
-            // Name above, message below
+            
             StackPanel content = new StackPanel();
             content.Children.Add(nameLabel);
             content.Children.Add(body);
 
-            // The bubble: left for the bot, right for the user
+           
             Border bubble = new Border
             {
                 Child = content,
@@ -258,6 +230,20 @@ namespace CyberSecurity_Awareness_Chatbot
             ChatScroll.ScrollToEnd();
         }
 
+        /// <summary>Shows the ASCII art at the top of the chat.</summary>
+        private void AddBanner()
+        {
+            MessagePanel.Children.Add(new TextBlock
+            {
+                Text = Banner,
+                FontFamily = new FontFamily("Consolas"),
+                FontSize = 13,
+                Foreground = BotColour,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 12)
+            });
+        }
+
         /// <summary>Adds a small grey centred note (not saved in History).</summary>
         private void AddNote(string text)
         {
@@ -271,7 +257,7 @@ namespace CyberSecurity_Awareness_Chatbot
             });
         }
 
-        /// <summary>Turns the input box and buttons on or off (used while the bot is typing).</summary>
+        
         private void SetInputEnabled(bool enabled)
         {
             InputBox.IsEnabled = enabled;
