@@ -8,29 +8,26 @@ using CyberSecurity_Awareness_Chatbot.Services;
 
 namespace CyberSecurity_Awareness_Chatbot
 {
-    
     public partial class MainWindow : Window
     {
         private readonly ChatBot _bot = new ChatBot();
         private readonly AudioService _audio = new AudioService();
-        private User? _user;            
-        private bool _chatEnded;       
-        private bool _showingHistory;   
+        private User? _user;
+        private bool _chatEnded;
+        private bool _showingHistory;
 
-        
         private readonly List<string> _history = new List<string>();
 
         private const int MaxNameLength = 30;
-        private const int TypingDelayMs = 10;   
+        private const int TypingDelayMs = 10;
 
-        // Colours: the name label and the bubble background for each speaker
-        private static readonly Brush BotColour = Brushes.LightGreen;
-        private static readonly Brush UserColour = Brushes.LightSkyBlue;
-        private static readonly Brush BotBubble = new SolidColorBrush(Color.FromRgb(49, 50, 68));
-        private static readonly Brush UserBubble = new SolidColorBrush(Color.FromRgb(44, 62, 94));
-        private static readonly Brush ErrorBubble = new SolidColorBrush(Color.FromRgb(74, 42, 51));
-
-      
+        private static readonly Brush BotNameColour = Hex("#15803D");
+        private static readonly Brush UserNameColour = Hex("#DBEAFE");
+        private static readonly Brush BotBubble = Hex("#F1F5F9");
+        private static readonly Brush UserBubble = Hex("#2563EB");
+        private static readonly Brush ErrorBubble = Hex("#FEE2E2");
+        private static readonly Brush ErrorText = Hex("#991B1B");
+        private static readonly Brush DarkText = Hex("#1F2937");
 
         public MainWindow()
         {
@@ -38,20 +35,21 @@ namespace CyberSecurity_Awareness_Chatbot
             Loaded += MainWindow_Loaded;
         }
 
-        /// <summary>Runs once the window is showing: plays the voice greeting and welcomes the user.</summary>
+        private static SolidColorBrush Hex(string colour)
+        {
+            return (SolidColorBrush)new BrushConverter().ConvertFromString(colour)!;
+        }
+
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             MessagePanel.Children.Clear();
 
-            
             _audio.PlayGreeting(wait: false);
 
             SetInputEnabled(false);
             await AddMessage("Bot", "Welcome to the Cybersecurity Awareness Bot! Please enter your name.", isBot: true);
             SetInputEnabled(true);
         }
-
-       
 
         private async void SendButton_Click(object sender, RoutedEventArgs e)
         {
@@ -66,7 +64,6 @@ namespace CyberSecurity_Awareness_Chatbot
             }
         }
 
-        
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             ShowChatView();
@@ -99,7 +96,6 @@ namespace CyberSecurity_Awareness_Chatbot
             _showingHistory = false;
         }
 
-       
         private async Task HandleInput()
         {
             string text = InputBox.Text.Trim();
@@ -107,12 +103,10 @@ namespace CyberSecurity_Awareness_Chatbot
 
             ShowChatView();
 
-           
             SetInputEnabled(false);
 
             if (string.IsNullOrWhiteSpace(text))
             {
-                
                 string error = _user == null ? "Please enter a valid name." : "How can I help you today?";
                 await AddMessage("Bot", error, isBot: true, isError: true);
             }
@@ -131,7 +125,6 @@ namespace CyberSecurity_Awareness_Chatbot
             }
         }
 
-        
         private async Task HandleName(string text)
         {
             if (text.Length > MaxNameLength)
@@ -142,7 +135,7 @@ namespace CyberSecurity_Awareness_Chatbot
             }
 
             _user = new User(text);
-            _bot.SetUser(_user); 
+            _bot.SetUser(_user);
 
             await AddMessage("You", text, isBot: false, typing: false);
             await AddMessage("Bot",
@@ -150,7 +143,6 @@ namespace CyberSecurity_Awareness_Chatbot
                 isBot: true);
         }
 
-        
         private async Task HandleChat(User user, string text)
         {
             await AddMessage(user.Name, text, isBot: false, typing: false);
@@ -162,7 +154,6 @@ namespace CyberSecurity_Awareness_Chatbot
                 InputBox.IsEnabled = false;
                 SendButton.IsEnabled = false;
 
-                
                 ClearButton.IsEnabled = true;
                 HistoryButton.IsEnabled = true;
                 return;
@@ -171,13 +162,14 @@ namespace CyberSecurity_Awareness_Chatbot
             await AddMessage("Bot", _bot.GetResponse(text), isBot: true);
         }
 
-        
         private async Task AddMessage(string sender, string message, bool isBot, bool typing = true, bool isError = false)
         {
-            
             _history.Add($"[{DateTime.Now:HH:mm}] {sender}: {message}");
 
-            // The sender's name, in bold and in their colour
+            Brush bubbleColour = isError ? ErrorBubble : (isBot ? BotBubble : UserBubble);
+            Brush nameColour = isError ? ErrorText : (isBot ? BotNameColour : UserNameColour);
+            Brush textColour = isError ? ErrorText : (isBot ? DarkText : Brushes.White);
+
             TextBlock nameLabel = new TextBlock
             {
                 Text = sender,
@@ -187,7 +179,6 @@ namespace CyberSecurity_Awareness_Chatbot
                 Margin = new Thickness(0, 0, 0, 2)
             };
 
-            
             TextBlock body = new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
@@ -195,12 +186,10 @@ namespace CyberSecurity_Awareness_Chatbot
                 FontSize = 14
             };
 
-            
             StackPanel content = new StackPanel();
             content.Children.Add(nameLabel);
             content.Children.Add(body);
 
-           
             Border bubble = new Border
             {
                 Child = content,
@@ -230,21 +219,6 @@ namespace CyberSecurity_Awareness_Chatbot
             ChatScroll.ScrollToEnd();
         }
 
-        /// <summary>Shows the ASCII art at the top of the chat.</summary>
-        private void AddBanner()
-        {
-            MessagePanel.Children.Add(new TextBlock
-            {
-                Text = Banner,
-                FontFamily = new FontFamily("Consolas"),
-                FontSize = 13,
-                Foreground = BotColour,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 12)
-            });
-        }
-
-        /// <summary>Adds a small grey centred note (not saved in History).</summary>
         private void AddNote(string text)
         {
             MessagePanel.Children.Add(new TextBlock
@@ -257,7 +231,6 @@ namespace CyberSecurity_Awareness_Chatbot
             });
         }
 
-        
         private void SetInputEnabled(bool enabled)
         {
             InputBox.IsEnabled = enabled;
