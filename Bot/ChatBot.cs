@@ -4,6 +4,12 @@ using CyberSecurity_Awareness_Chatbot.Models;
 namespace CyberSecurity_Awareness_Chatbot.Bot
 {
     /// <summary>
+    /// A delegate: a "job description" for a method. Any method that takes a message
+    /// and returns a reply (or null if it isn't for them) can be stored in a list.
+    /// </summary>
+    public delegate string? ResponseHandler(string message);
+
+    /// <summary>
     /// The chatbot's "brain". It takes text in and gives text out, and never
     /// touches the UI. That separation lets the GUI (and later features) reuse it.
     /// </summary>
@@ -27,6 +33,22 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
         // Phrases that show the user is confused or unsure
         private static readonly string[] ConfusionPhrases =
             { "confused", "don't understand", "dont understand", "what do you mean", "unclear", "not sure what" };
+
+        // --- Sentiment: mood -> words that suggest it, and mood -> empathetic reply ---
+        // Short stems like "worr" also match "worried" and "worry".
+        private readonly Dictionary<string, string[]> _moodWords = new()
+        {
+            { "worried", new[] { "worr", "scared", "afraid", "anxious", "nervous", "concerned", "overwhelm", "unsafe" } },
+            { "frustrated", new[] { "frustrat", "annoy", "angry", "fed up", "i hate", "too complicated", "too hard" } },
+            { "curious", new[] { "curious", "wondering", "i wonder", "fascinat" } }
+        };
+
+        private readonly Dictionary<string, string> _moodReplies = new()
+        {
+            { "worried", "It's completely understandable to feel that way. Threats online can be very convincing. Let me share a tip to help you stay safe." },
+            { "frustrated", "I'm sorry this feels frustrating. Cybersecurity can seem complicated, but we can take it one small step at a time. Here's a simple tip." },
+            { "curious", "Great question! Curiosity is one of the best security tools you can have. Here's something worth knowing." }
+        };
 
         /// <summary>The topic currently being discussed (used later for memory and the GUI).</summary>
         public string? CurrentTopic => _currentTopic;
@@ -56,6 +78,24 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
         public void SetUser(User user)
         {
             _user = user;
+        }
+
+        // --- Delegates: each handler is a small method that either returns a reply or null ---
+        private readonly List<ResponseHandler> _handlers;
+
+        public ChatBot()
+        {
+            // Order matters: the first handler to return a reply wins.
+            _handlers = new List<ResponseHandler>
+            {
+                HandleSmallTalk,    // "how are you", "what's your purpose"
+                HandleMemory,       // "I'm interested in privacy", "what do you remember"
+                HandleSentiment,    // "I'm worried about scams"
+                HandleTopic,        // "tell me about phishing"
+                HandleConfusion,    // "I don't understand"
+                HandleFollowUp,     // "tell me more", "another tip"
+                HandleGeneralTip    // "give me a tip"
+            };
         }
 
         // Topic keyword -> LIST of possible answers. The bot picks one at random.
@@ -155,7 +195,27 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
 
             string message = input.Trim().ToLowerInvariant();
 
-            // Basic conversation questions
+            // Ask each handler in turn. The first one that returns text wins.
+            foreach (ResponseHandler handler in _handlers)
+            {
+                string? reply = handler(message);
+                if (reply != null)
+                {
+                    return reply;
+                }
+            }
+
+            // Nobody understood the message
+            return DefaultResponse;
+        }
+
+        // ---------------------------------------------------------------
+        // Handlers. Each returns a reply, or null meaning "not for me".
+        // ---------------------------------------------------------------
+
+        /// <summary>Basic conversation questions from Part 1.</summary>
+        private string? HandleSmallTalk(string message)
+        {
             if (message.Contains("how are you"))
             {
                 return $"I'm well, thanks{NameSuffix()}! Which cyber topic would you like to learn about to stay safe online today?";
@@ -172,6 +232,12 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                        ". You can also ask for a cybersecurity tip.";
             }
 
+            return null;
+        }
+
+        /// <summary>Stores what the user is interested in, or recalls what we know.</summary>
+        private string? HandleMemory(string message)
+        {
             // Memory check: "what do you remember about me?"
             if (message.Contains("remember") || message.Contains("know about me") || message.Contains("what have we talked"))
             {
@@ -190,49 +256,90 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                 }
             }
 
-            // 1. Topic keywords: remember the topic, then pick ONE random answer from its list
-            foreach (KeyValuePair<string, List<string>> topic in _topics)
+            return null;
+        }
+
+        /// <summary>
+        /// Detects the user's mood, responds with empathy, then shares a tip straight away
+        /// so the user doesn't have to ask again.
+        /// </summary>
+        private string? HandleSentiment(string message)
+        {
+            string? mood = DetectMood(message);
+            if (mood == null)
             {
-                if (message.Contains(topic.Key))
-                {
-                    _currentTopic = topic.Key;
-                    _user?.RememberTopic(topic.Key);
-                    return WithRecall(PickRandom(topic.Value));
-                }
+                return null;
             }
 
-            // 2. Confusion: explain the current topic again, differently
-            if (ConfusionPhrases.Any(phrase => message.Contains(phrase)))
+            // Use the topic they mentioned, otherwise the one we were already discussing
+            string? topic = FindTopic(message) ?? _currentTopic;
+            string tip;
+            if (topic != null)
             {
-                if (_currentTopic != null)
-                {
-                    return "No problem, let me explain it another way. " + PickRandom(_topics[_currentTopic]);
-                }
-                return "No worries! Which topic would you like me to explain? " + TopicList();
+                _currentTopic = topic;
+                _user?.RememberTopic(topic);
+                tip = PickRandom(_topics[topic]);
+            }
+            else
+            {
+                tip = PickRandom(_generalTips);
             }
 
-            // 3. Follow-ups ("tell me more", "another tip"): stay on the current topic
-            if (FollowUpWords.Any(word => ContainsWord(message, word)))
+            return _moodReplies[mood] + "\n\nTip: " + tip;
+        }
+
+        /// <summary>Topic keywords: remember the topic, then pick ONE random answer from its list.</summary>
+        private string? HandleTopic(string message)
+        {
+            string? topic = FindTopic(message);
+            if (topic == null)
             {
-                if (_currentTopic != null)
-                {
-                    return WithRecall(PickRandom(_topics[_currentTopic]));
-                }
-                if (message.Contains("tip"))
-                {
-                    return PickRandom(_generalTips);
-                }
-                return "Happy to go further! Which topic should we start with? " + TopicList();
+                return null;
             }
 
-            // 4. A plain request for a tip
+            _currentTopic = topic;
+            _user?.RememberTopic(topic);
+            return WithRecall(PickRandom(_topics[topic]));
+        }
+
+        /// <summary>Confusion: explain the current topic again, differently.</summary>
+        private string? HandleConfusion(string message)
+        {
+            if (!ConfusionPhrases.Any(phrase => message.Contains(phrase)))
+            {
+                return null;
+            }
+
+            if (_currentTopic != null)
+            {
+                return "No problem, let me explain it another way. " + PickRandom(_topics[_currentTopic]);
+            }
+            return "No worries! Which topic would you like me to explain? " + TopicList();
+        }
+
+        /// <summary>Follow-ups ("tell me more", "another tip"): stay on the current topic.</summary>
+        private string? HandleFollowUp(string message)
+        {
+            if (!FollowUpWords.Any(word => ContainsWord(message, word)))
+            {
+                return null;
+            }
+
+            if (_currentTopic != null)
+            {
+                return WithRecall(PickRandom(_topics[_currentTopic]));
+            }
             if (message.Contains("tip"))
             {
                 return PickRandom(_generalTips);
             }
+            return "Happy to go further! Which topic should we start with? " + TopicList();
+        }
 
-            // Unsupported query
-            return DefaultResponse;
+        /// <summary>A plain request for a tip.</summary>
+        private string? HandleGeneralTip(string message)
+        {
+            return message.Contains("tip") ? PickRandom(_generalTips) : null;
         }
 
         /// <summary>
@@ -251,6 +358,19 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
 
             _lastResponse = choice;
             return choice;
+        }
+
+        /// <summary>Returns "worried", "frustrated" or "curious" if the message sounds like it, otherwise null.</summary>
+        private string? DetectMood(string message)
+        {
+            foreach (KeyValuePair<string, string[]> mood in _moodWords)
+            {
+                if (mood.Value.Any(word => message.Contains(word)))
+                {
+                    return mood.Key;
+                }
+            }
+            return null;
         }
 
         /// <summary>Finds which known topic (if any) appears in the message.</summary>
