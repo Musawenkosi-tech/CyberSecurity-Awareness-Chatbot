@@ -1,5 +1,5 @@
 ﻿using System.Windows;
-using System.Windows.Documents;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using CyberSecurity_Awareness_Chatbot.Bot;
@@ -18,14 +18,22 @@ namespace CyberSecurity_Awareness_Chatbot
         private readonly AudioService _audio = new AudioService();
         private User? _user;            // null until the user has entered their name
         private bool _chatEnded;        // true once the user types "exit"
+        private bool _showingHistory;   // true while the History view is open
+
+        // Every message is also saved here, so the History button still works after Clear
+        private readonly List<string> _history = new List<string>();
 
         private const int MaxNameLength = 30;
         private const int TypingDelayMs = 10;   // pause between letters for the typing effect
 
-        // Colours: one per speaker so the conversation is easy to follow
+        // Colours: the name label and the bubble background for each speaker
         private static readonly Brush BotColour = Brushes.LightGreen;
         private static readonly Brush UserColour = Brushes.LightSkyBlue;
-        private static readonly Brush ErrorColour = Brushes.LightCoral;
+        private static readonly Brush BotBubble = new SolidColorBrush(Color.FromRgb(49, 50, 68));
+        private static readonly Brush UserBubble = new SolidColorBrush(Color.FromRgb(44, 62, 94));
+        private static readonly Brush ErrorBubble = new SolidColorBrush(Color.FromRgb(74, 42, 51));
+
+      
 
         public MainWindow()
         {
@@ -36,15 +44,20 @@ namespace CyberSecurity_Awareness_Chatbot
         /// <summary>Runs once the window is showing: plays the voice greeting and welcomes the user.</summary>
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            ChatLog.Document.Blocks.Clear();
+            MessagePanel.Children.Clear();
+            AddBanner();
 
             // wait: false so the window doesn't freeze while the audio plays
             _audio.PlayGreeting(wait: false);
 
             SetInputEnabled(false);
-            await AddMessage("Bot", "Welcome to the Cybersecurity Awareness Bot! Please enter your name.", BotColour);
+            await AddMessage("Bot", "Welcome to the Cybersecurity Awareness Bot! Please enter your name.", isBot: true);
             SetInputEnabled(true);
         }
+
+        // ---------------------------------------------------------------
+        // Buttons
+        // ---------------------------------------------------------------
 
         private async void SendButton_Click(object sender, RoutedEventArgs e)
         {
@@ -59,11 +72,52 @@ namespace CyberSecurity_Awareness_Chatbot
             }
         }
 
+        /// <summary>Clears the chat on screen. The History button still has every message.</summary>
+        private void ClearButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShowChatView();
+            MessagePanel.Children.Clear();
+            AddBanner();
+            AddNote("Chat cleared. Press History to see earlier messages.");
+        }
+
+        /// <summary>Switches between the chat and the full message history.</summary>
+        private void HistoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_showingHistory)
+            {
+                ShowChatView();
+                return;
+            }
+
+            HistoryBox.Text = _history.Count == 0 ? "No messages yet." : string.Join("\n\n", _history);
+            HistoryBox.ScrollToEnd();
+
+            ChatScroll.Visibility = Visibility.Collapsed;
+            HistoryBox.Visibility = Visibility.Visible;
+            HistoryButton.Content = "Back to chat";
+            _showingHistory = true;
+        }
+
+        private void ShowChatView()
+        {
+            HistoryBox.Visibility = Visibility.Collapsed;
+            ChatScroll.Visibility = Visibility.Visible;
+            HistoryButton.Content = "History";
+            _showingHistory = false;
+        }
+
+        // ---------------------------------------------------------------
+        // Handling what the user types
+        // ---------------------------------------------------------------
+
         /// <summary>Called when the user presses Send or Enter.</summary>
         private async Task HandleInput()
         {
             string text = InputBox.Text.Trim();
             InputBox.Clear();
+
+            ShowChatView();
 
             // Switch the input off while the bot is "typing" so messages can't overlap
             SetInputEnabled(false);
@@ -72,7 +126,7 @@ namespace CyberSecurity_Awareness_Chatbot
             {
                 // Input validation: empty entries
                 string error = _user == null ? "Please enter a valid name." : "How can I help you today?";
-                await AddMessage("Bot", error, ErrorColour);
+                await AddMessage("Bot", error, isBot: true, isError: true);
             }
             else if (_user == null)
             {
@@ -94,88 +148,142 @@ namespace CyberSecurity_Awareness_Chatbot
         {
             if (text.Length > MaxNameLength)
             {
-                await AddMessage("Bot", $"That name is too long (max {MaxNameLength} characters). Please try again.", ErrorColour);
+                await AddMessage("Bot", $"That name is too long (max {MaxNameLength} characters). Please try again.",
+                    isBot: true, isError: true);
                 return;
             }
 
             _user = new User(text);
             _bot.SetUser(_user); // lets the bot remember details about this user
 
-            await AddMessage("You", text, UserColour, typing: false);
+            await AddMessage("You", text, isBot: false, typing: false);
             await AddMessage("Bot",
                 $"Hello, {_user.Name}! Ask me about passwords, phishing, safe browsing, malware, privacy, scams, ransomware or social engineering. Type 'exit' to leave.",
-                BotColour);
+                isBot: true);
         }
 
         /// <summary>Every message after the name goes to the chatbot.</summary>
         private async Task HandleChat(User user, string text)
         {
-            await AddMessage(user.Name, text, UserColour, typing: false);
+            await AddMessage(user.Name, text, isBot: false, typing: false);
 
             if (_bot.IsExitCommand(text))
             {
-                await AddMessage("Bot", $"Thank you, {user.Name}! Stay safe online.", BotColour);
+                await AddMessage("Bot", $"Thank you, {user.Name}! Stay safe online.", isBot: true);
                 _chatEnded = true;
                 InputBox.IsEnabled = false;
                 SendButton.IsEnabled = false;
+
+                // Clear and History stay usable after the chat has ended
+                ClearButton.IsEnabled = true;
+                HistoryButton.IsEnabled = true;
                 return;
             }
 
-            await AddMessage("Bot", _bot.GetResponse(text), BotColour);
+            await AddMessage("Bot", _bot.GetResponse(text), isBot: true);
         }
 
+        // ---------------------------------------------------------------
+        // Drawing the chat
+        // ---------------------------------------------------------------
+
         /// <summary>
-        /// Adds one message to the chat: a coloured name, the text, and a divider line.
+        /// Adds one chat bubble. Bot messages sit on the left, the user's on the right.
         /// With typing = true the letters appear one at a time.
         /// </summary>
-        private async Task AddMessage(string sender, string message, Brush colour, bool typing = true)
+        private async Task AddMessage(string sender, string message, bool isBot, bool typing = true, bool isError = false)
         {
-            // A Paragraph is one block of the chat. Its bottom border is the divider line.
-            Paragraph paragraph = new Paragraph
-            {
-                Margin = new Thickness(0, 0, 0, 8),
-                Padding = new Thickness(0, 0, 0, 8),
-                BorderBrush = Brushes.DimGray,
-                BorderThickness = new Thickness(0, 0, 0, 1)
-            };
+            // Keep a copy for the History view
+            _history.Add($"[{DateTime.Now:HH:mm}] {sender}: {message}");
 
             // The sender's name, in bold and in their colour
-            paragraph.Inlines.Add(new Run(sender + ": ") { Foreground = colour, FontWeight = FontWeights.Bold });
-
-            // The message text, added letter by letter
-            Run body = new Run("") { Foreground = Brushes.White };
-            paragraph.Inlines.Add(body);
-            ChatLog.Document.Blocks.Add(paragraph);
-
-            foreach (char letter in message.Replace("\r", ""))
+            TextBlock nameLabel = new TextBlock
             {
-                if (letter == '\n')
-                {
-                    // Start a new line, then keep adding text to a fresh Run
-                    paragraph.Inlines.Add(new LineBreak());
-                    body = new Run("") { Foreground = Brushes.White };
-                    paragraph.Inlines.Add(body);
-                }
-                else
+                Text = sender,
+                FontWeight = FontWeights.Bold,
+                FontSize = 12,
+                Foreground = isBot ? BotColour : UserColour,
+                Margin = new Thickness(0, 0, 0, 2)
+            };
+
+            // The message text (starts empty so it can be typed out)
+            TextBlock body = new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = Brushes.White,
+                FontSize = 14
+            };
+
+            // Name above, message below
+            StackPanel content = new StackPanel();
+            content.Children.Add(nameLabel);
+            content.Children.Add(body);
+
+            // The bubble: left for the bot, right for the user
+            Border bubble = new Border
+            {
+                Child = content,
+                Background = isError ? ErrorBubble : (isBot ? BotBubble : UserBubble),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(12, 8, 12, 8),
+                Margin = new Thickness(0, 0, 0, 10),
+                MaxWidth = 520,
+                HorizontalAlignment = isBot ? HorizontalAlignment.Left : HorizontalAlignment.Right
+            };
+            MessagePanel.Children.Add(bubble);
+
+            if (typing)
+            {
+                foreach (char letter in message.Replace("\r", ""))
                 {
                     body.Text += letter;
-                }
-
-                if (typing)
-                {
-                    ChatLog.ScrollToEnd();
+                    ChatScroll.ScrollToEnd();
                     await Task.Delay(TypingDelayMs);
                 }
             }
+            else
+            {
+                body.Text = message;
+            }
 
-            ChatLog.ScrollToEnd();
+            ChatScroll.ScrollToEnd();
         }
 
-        /// <summary>Turns the input box and Send button on or off.</summary>
+        /// <summary>Shows the ASCII art at the top of the chat.</summary>
+        private void AddBanner()
+        {
+            MessagePanel.Children.Add(new TextBlock
+            {
+                Text = Banner,
+                FontFamily = new FontFamily("Consolas"),
+                FontSize = 13,
+                Foreground = BotColour,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 12)
+            });
+        }
+
+        /// <summary>Adds a small grey centred note (not saved in History).</summary>
+        private void AddNote(string text)
+        {
+            MessagePanel.Children.Add(new TextBlock
+            {
+                Text = text,
+                Foreground = Brushes.Gray,
+                FontStyle = FontStyles.Italic,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 10)
+            });
+        }
+
+        /// <summary>Turns the input box and buttons on or off (used while the bot is typing).</summary>
         private void SetInputEnabled(bool enabled)
         {
             InputBox.IsEnabled = enabled;
             SendButton.IsEnabled = enabled;
+            ClearButton.IsEnabled = enabled;
+            HistoryButton.IsEnabled = enabled;
+
             if (enabled)
             {
                 InputBox.Focus();

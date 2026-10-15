@@ -8,37 +8,45 @@
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- logo -->
+            <!-- title header -->
             <RowDefinition Height="Auto"/>
-            <!-- section header -->
+            <!-- History and Clear buttons -->
             <RowDefinition Height="*"/>
-            <!-- chat history -->
+            <!-- chat area -->
             <RowDefinition Height="Auto"/>
             <!-- input area -->
         </Grid.RowDefinitions>
 
-        <!-- Row 0: ASCII logo (Consolas = monospaced, so the art stays aligned) -->
-        <Border Grid.Row="0" Background="#11111B" CornerRadius="8" Padding="10" Margin="0,0,0,10">
-            <TextBlock xml:space="preserve" FontFamily="Consolas" FontSize="14"
-                       Foreground="#A6E3A1" HorizontalAlignment="Center">╔═══════════════════════════════════════╗
-║   [#]  CYBERSECURITY AWARENESS  [#]   ║
-║                  BOT                  ║
-║         Stay smart. Stay safe.        ║
-╚═══════════════════════════════════════╝
-            \  (o_o)  /
-             \_/|_|\_/</TextBlock>
-        </Border>
+        <!-- Row 0: title header -->
+        <TextBlock Grid.Row="0" Text="CYBERSECURITY AWARENESS BOT"
+                   FontSize="24" FontWeight="Bold" Foreground="#A6E3A1"
+                   HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
-        <!-- Row 1: section header with a divider line under it -->
-        <Border Grid.Row="1" BorderBrush="#45475A" BorderThickness="0,0,0,1" Margin="0,0,0,8" Padding="4,0,0,6">
-            <TextBlock Text="CONVERSATION" FontSize="12" FontWeight="Bold" Foreground="#89B4FA"/>
-        </Border>
+        <!-- Row 1: History and Clear buttons, on the right -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
+            <Button x:Name="HistoryButton" Content="History" Width="110" Padding="6,4"
+                    Background="#45475A" Foreground="White" BorderThickness="0"
+                    Click="HistoryButton_Click"/>
+            <Button x:Name="ClearButton" Content="Clear" Width="80" Padding="6,4" Margin="8,0,0,0"
+                    Background="#F38BA8" Foreground="#1E1E2E" FontWeight="Bold" BorderThickness="0"
+                    Click="ClearButton_Click"/>
+        </StackPanel>
 
-        <!-- Row 2: chat history. A RichTextBox lets each message have its own colours. -->
-        <RichTextBox x:Name="ChatLog" Grid.Row="2" IsReadOnly="True"
-                     VerticalScrollBarVisibility="Auto"
-                     FontSize="14" Background="#2A2A3C" Foreground="White"
-                     BorderBrush="#45475A" Padding="10"/>
+        <!-- Row 2: the chat. Two layers share the same space; only one is visible at a time. -->
+        <Border Grid.Row="2" Background="#2A2A3C" BorderBrush="#45475A" BorderThickness="1" CornerRadius="6">
+            <Grid>
+                <!-- Chat bubbles are added to MessagePanel from the code -->
+                <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto" Padding="10">
+                    <StackPanel x:Name="MessagePanel"/>
+                </ScrollViewer>
+
+                <!-- Full history (shown when the History button is pressed) -->
+                <TextBox x:Name="HistoryBox" Visibility="Collapsed" IsReadOnly="True"
+                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                         FontSize="13" Background="#2A2A3C" Foreground="White"
+                         BorderThickness="0" Padding="10"/>
+            </Grid>
+        </Border>
 
         <!-- Row 3: input area -->
         <Grid Grid.Row="3" Margin="0,10,0,0">
