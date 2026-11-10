@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using CyberSecurity_Awareness_Chatbot.Bot;
 using CyberSecurity_Awareness_Chatbot.Models;
 using CyberSecurity_Awareness_Chatbot.Services;
@@ -17,6 +18,10 @@ namespace CyberSecurity_Awareness_Chatbot
         private bool _showingHistory;
 
         private readonly List<string> _history = new List<string>();
+
+        private TaskRepository? _repository;
+        private readonly HashSet<int> _remindedTaskIds = new HashSet<int>();
+        private readonly DispatcherTimer _reminderTimer = new DispatcherTimer();
 
         private const int MaxNameLength = 30;
         private const int TypingDelayMs = 10;
@@ -45,10 +50,83 @@ namespace CyberSecurity_Awareness_Chatbot
             MessagePanel.Children.Clear();
 
             _audio.PlayGreeting(wait: false);
+            ConnectToDatabase();
 
             SetInputEnabled(false);
             await AddMessage("Bot", "Welcome to the Cybersecurity Awareness Bot! Please enter your name.", isBot: true);
             SetInputEnabled(true);
+        }
+
+        private void ConnectToDatabase()
+        {
+            DatabaseSettings? settings = DatabaseSettings.Load();
+            if (settings != null)
+            {
+                TaskRepository repository = new TaskRepository(settings);
+                if (repository.TestConnection())
+                {
+                    _repository = repository;
+                }
+            }
+
+            _bot.SetRepository(_repository);
+
+            if (_repository != null)
+            {
+                _reminderTimer.Interval = TimeSpan.FromSeconds(30);
+                _reminderTimer.Tick += ReminderTimer_Tick;
+                _reminderTimer.Start();
+            }
+            else
+            {
+                AddNote("Task database not connected. Tasks are unavailable (check MySQL and dbsettings.json).");
+            }
+        }
+
+        private async void ReminderTimer_Tick(object? sender, EventArgs e)
+        {
+            if (_repository == null || _user == null)
+            {
+                return;
+            }
+
+            foreach (TaskItem task in _repository.GetDueReminders())
+            {
+                if (_remindedTaskIds.Add(task.Id))
+                {
+                    _bot.Log.Add($"Reminder triggered: '{task.Title}'");
+                    await AddMessage("Bot", $"Reminder: '{task.Title}' is due. {task.Description}", isBot: true, typing: false);
+                }
+            }
+        }
+
+        private async void QuizButton_Click(object sender, RoutedEventArgs e)
+        {
+            await OpenQuiz();
+        }
+
+        private async Task OpenQuiz()
+        {
+            QuizWindow window = new QuizWindow(_bot.Log) { Owner = this };
+            window.ShowDialog();
+
+            if (window.ResultMessage != "")
+            {
+                await AddMessage("Bot", window.ResultMessage, isBot: true, typing: false);
+            }
+        }
+
+        private void TasksButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_repository == null)
+            {
+                MessageBox.Show("The task database is not connected. Check that MySQL is running and dbsettings.json exists.",
+                    "Tasks unavailable");
+                return;
+            }
+
+            TasksWindow window = new TasksWindow(_repository) { Owner = this };
+            window.ShowDialog();
         }
 
         private async void SendButton_Click(object sender, RoutedEventArgs e)
@@ -139,7 +217,7 @@ namespace CyberSecurity_Awareness_Chatbot
 
             await AddMessage("You", text, isBot: false, typing: false);
             await AddMessage("Bot",
-                $"Hello, {_user.Name}! Ask me about passwords, phishing, safe browsing, malware, privacy, scams, ransomware or social engineering. Type 'exit' to leave.",
+                $"Hello, {_user.Name}! Ask me about passwords, phishing, safe browsing, malware, privacy, scams, ransomware or social engineering. Try 'add task - review privacy settings' or 'show tasks' or 'quiz'. Type 'exit' to leave.",
                 isBot: true);
         }
 
@@ -160,6 +238,11 @@ namespace CyberSecurity_Awareness_Chatbot
             }
 
             await AddMessage("Bot", _bot.GetResponse(text), isBot: true);
+
+            if (_bot.TakeQuizRequest())
+            {
+                await OpenQuiz();
+            }
         }
 
         private async Task AddMessage(string sender, string message, bool isBot, bool typing = true, bool isError = false)
@@ -236,6 +319,8 @@ namespace CyberSecurity_Awareness_Chatbot
             InputBox.IsEnabled = enabled;
             SendButton.IsEnabled = enabled;
             ClearButton.IsEnabled = enabled;
+            TasksButton.IsEnabled = enabled;
+            QuizButton.IsEnabled = enabled;
             HistoryButton.IsEnabled = enabled;
 
             if (enabled)

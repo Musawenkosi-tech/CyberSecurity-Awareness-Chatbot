@@ -47,6 +47,9 @@
         </Border>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
+            <Button x:Name="QuizButton" Content="Quiz" Width="80" Padding="8,6" Margin="0,0,8,0"
+                    Style="{StaticResource RoundButton}" Background="#7C3AED"
+                    Click="QuizButton_Click"/>
             <Button x:Name="TasksButton" Content="Tasks" Width="90" Padding="8,6" Margin="0,0,8,0"
                     Style="{StaticResource RoundButton}" Background="#16A34A"
                     Click="TasksButton_Click"/>
