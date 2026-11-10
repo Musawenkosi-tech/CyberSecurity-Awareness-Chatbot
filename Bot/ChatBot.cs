@@ -12,6 +12,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             "I didn't quite understand that. Could you rephrase?";
 
         private readonly Random _random = new Random();
+        private readonly NlpEngine _nlp = new NlpEngine();
 
         private string? _currentTopic;
         private string? _lastResponse;
@@ -56,11 +57,28 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             { "social engineering", "stay alert for unexpected requests that ask for codes or passwords." }
         };
 
-        private TaskAssistant _taskAssistant = new TaskAssistant(null);
+        public ActivityLog Log { get; } = new ActivityLog();
+
+        private TaskAssistant _taskAssistant;
+        private bool _lastWasLog;
+        private bool _quizRequested;
+
+        private static readonly string[] QuizPhrases =
+            { "quiz", "mini game", "mini-game", "minigame", "test my knowledge", "test me", "play a game" };
+
+        public bool TakeQuizRequest()
+        {
+            bool requested = _quizRequested;
+            _quizRequested = false;
+            return requested;
+        }
+
+        private static readonly string[] LogPhrases =
+            { "activity log", "what have you done", "recent actions", "show log", "view log", "action log" };
 
         public void SetRepository(TaskRepository? repository)
         {
-            _taskAssistant = new TaskAssistant(repository);
+            _taskAssistant = new TaskAssistant(repository, Log);
         }
 
         public void SetUser(User user)
@@ -72,10 +90,15 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
 
         public ChatBot()
         {
+            _taskAssistant = new TaskAssistant(null, Log);
+
             _handlers = new List<ResponseHandler>
             {
                 HandleTasks,
+                HandleActivityLog,
+                HandleQuiz,
                 HandleSmallTalk,
+                HandleSocial,
                 HandleMemory,
                 HandleSentiment,
                 HandleTopic,
@@ -174,7 +197,13 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                 return "I didn't catch that. How can I help you today?";
             }
 
-            string message = input.Trim().ToLowerInvariant();
+            NlpResult nlp = _nlp.Process(input.Trim());
+            string message = nlp.Text;
+
+            if (nlp.Intent != null)
+            {
+                Log.Add($"Recognised a '{nlp.Intent}' request from: \"{Shorten(input.Trim())}\"");
+            }
 
             foreach (ResponseHandler handler in _handlers)
             {
@@ -185,7 +214,43 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                 }
             }
 
-            return DefaultResponse;
+            return DefaultResponse + " " + Hint;
+        }
+
+        private const string Hint =
+            "You can ask about a cyber topic, add a task or reminder, take the quiz, or ask for a tip.";
+
+        private static string Shorten(string text)
+        {
+            return text.Length <= 40 ? text : text.Substring(0, 40) + "...";
+        }
+
+        private string? HandleQuiz(string message)
+        {
+            if (!QuizPhrases.Any(phrase => message.Contains(phrase)))
+            {
+                return null;
+            }
+
+            _quizRequested = true;
+            return "Great idea! Let's test your cybersecurity knowledge. Opening the quiz now...";
+        }
+
+        private string? HandleActivityLog(string message)
+        {
+            if (LogPhrases.Any(phrase => message.Contains(phrase)))
+            {
+                _lastWasLog = true;
+                return Log.ShowRecent();
+            }
+
+            if (_lastWasLog && message.Contains("more"))
+            {
+                return Log.ShowMore();
+            }
+
+            _lastWasLog = false;
+            return null;
         }
 
         private string? HandleTasks(string message)
@@ -227,6 +292,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                 if (interest != null)
                 {
                     _user.FavouriteTopic = interest;
+                    Log.Add($"Remembered favourite topic: {interest}");
                     _currentTopic = interest;
                     return $"Great! I'll remember that you're interested in {interest}. It's a crucial part of staying safe online.";
                 }
@@ -256,7 +322,34 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                 tip = PickRandom(_generalTips);
             }
 
+            Log.Add($"Detected a {mood} mood and shared a tip");
             return _moodReplies[mood] + "\n\nTip: " + tip;
+        }
+
+        private string? HandleSocial(string message)
+        {
+            if (message.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > 4)
+            {
+                return null;
+            }
+
+            if (ContainsWord(message, "hi") || ContainsWord(message, "hello") || ContainsWord(message, "hey")
+                || message.Contains("good morning") || message.Contains("good afternoon") || message.Contains("good evening"))
+            {
+                return $"Hello{NameSuffix()}! Ask me about a cyber topic, add a task, or try the quiz.";
+            }
+
+            if (message.Contains("thank") || message.Contains("cheers"))
+            {
+                return "You're welcome! Stay safe online.";
+            }
+
+            if (message.Contains("who are you") || message.Contains("your name"))
+            {
+                return "I'm the Cybersecurity Awareness Bot. I help South African citizens stay safe online.";
+            }
+
+            return null;
         }
 
         private string? HandleTopic(string message)
@@ -343,7 +436,7 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                     return key;
                 }
             }
-            return null;
+            return _nlp.FindTopic(message);
         }
 
         private string NameSuffix()
