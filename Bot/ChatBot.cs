@@ -1,33 +1,27 @@
 ﻿using System.Text.RegularExpressions;
 using CyberSecurity_Awareness_Chatbot.Models;
+using CyberSecurity_Awareness_Chatbot.Services;
 
 namespace CyberSecurity_Awareness_Chatbot.Bot
 {
-    
     public delegate string? ResponseHandler(string message);
 
-    
     public class ChatBot
     {
         public const string DefaultResponse =
             "I didn't quite understand that. Could you rephrase?";
 
-        
         private readonly Random _random = new Random();
 
-        
-        private string? _currentTopic;   
-        private string? _lastResponse;   
+        private string? _currentTopic;
+        private string? _lastResponse;
 
-       
         private static readonly string[] FollowUpWords =
             { "another", "more", "explain", "again", "next", "continue" };
 
-        
         private static readonly string[] ConfusionPhrases =
             { "confused", "don't understand", "dont understand", "what do you mean", "unclear", "not sure what" };
 
-        
         private readonly Dictionary<string, string[]> _moodWords = new()
         {
             { "worried", new[] { "worr", "scared", "afraid", "anxious", "nervous", "concerned", "overwhelm", "unsafe" } },
@@ -42,18 +36,14 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             { "curious", "Great question! Curiosity is one of the best security tools you can have. Here's something worth knowing." }
         };
 
-        
         public string? CurrentTopic => _currentTopic;
 
-        
-        private User? _user;        
-        private int _replyCount;    
+        private User? _user;
+        private int _replyCount;
 
-        
         private static readonly string[] InterestPhrases =
             { "interested in", "i like", "i love", "favourite", "favorite", "i care about", "i want to learn about" };
 
-       
         private readonly Dictionary<string, string> _recallTips = new()
         {
             { "password", "you might want to check that your most important accounts each have a unique password." },
@@ -66,31 +56,35 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             { "social engineering", "stay alert for unexpected requests that ask for codes or passwords." }
         };
 
-        
+        private TaskAssistant _taskAssistant = new TaskAssistant(null);
+
+        public void SetRepository(TaskRepository? repository)
+        {
+            _taskAssistant = new TaskAssistant(repository);
+        }
+
         public void SetUser(User user)
         {
             _user = user;
         }
 
-        
         private readonly List<ResponseHandler> _handlers;
 
         public ChatBot()
         {
-            
             _handlers = new List<ResponseHandler>
             {
-                HandleSmallTalk,    
-                HandleMemory,       
-                HandleSentiment,    
-                HandleTopic,        
-                HandleConfusion,    
-                HandleFollowUp,     
-                HandleGeneralTip    
+                HandleTasks,
+                HandleSmallTalk,
+                HandleMemory,
+                HandleSentiment,
+                HandleTopic,
+                HandleConfusion,
+                HandleFollowUp,
+                HandleGeneralTip
             };
         }
 
-        
         private readonly Dictionary<string, List<string>> _topics = new()
         {
             { "password", new List<string>
@@ -159,7 +153,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             }
         };
 
-        // General tips for when the user just asks for "a tip"
         private readonly List<string> _generalTips = new()
         {
             "Think before you click. If a message creates urgency or asks for personal details, stop and verify it first.",
@@ -169,16 +162,13 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             "Lock your device whenever you step away, even for a minute."
         };
 
-        /// <summary>Returns true if the user wants to leave the chat.</summary>
         public bool IsExitCommand(string? input)
         {
             return ContainsWord(input, "exit") || ContainsWord(input, "quit") || ContainsWord(input, "bye");
         }
 
-        
         public string GetResponse(string? input)
         {
-           
             if (string.IsNullOrWhiteSpace(input))
             {
                 return "I didn't catch that. How can I help you today?";
@@ -186,7 +176,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
 
             string message = input.Trim().ToLowerInvariant();
 
-           
             foreach (ResponseHandler handler in _handlers)
             {
                 string? reply = handler(message);
@@ -196,14 +185,14 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                 }
             }
 
-            
             return DefaultResponse;
         }
 
-       
+        private string? HandleTasks(string message)
+        {
+            return _taskAssistant.Handle(message);
+        }
 
-        
-        
         private string? HandleSmallTalk(string message)
         {
             if (message.Contains("how are you"))
@@ -225,16 +214,13 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return null;
         }
 
-       
         private string? HandleMemory(string message)
         {
-            
             if (message.Contains("remember") || message.Contains("know about me") || message.Contains("what have we talked"))
             {
                 return DescribeMemory();
             }
 
-            
             if (_user != null && InterestPhrases.Any(phrase => message.Contains(phrase)))
             {
                 string? interest = FindTopic(message);
@@ -249,7 +235,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return null;
         }
 
-        
         private string? HandleSentiment(string message)
         {
             string? mood = DetectMood(message);
@@ -258,7 +243,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
                 return null;
             }
 
-            
             string? topic = FindTopic(message) ?? _currentTopic;
             string tip;
             if (topic != null)
@@ -275,7 +259,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return _moodReplies[mood] + "\n\nTip: " + tip;
         }
 
-        
         private string? HandleTopic(string message)
         {
             string? topic = FindTopic(message);
@@ -289,7 +272,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return WithRecall(PickRandom(_topics[topic]));
         }
 
-        
         private string? HandleConfusion(string message)
         {
             if (!ConfusionPhrases.Any(phrase => message.Contains(phrase)))
@@ -304,7 +286,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return "No worries! Which topic would you like me to explain? " + TopicList();
         }
 
-       
         private string? HandleFollowUp(string message)
         {
             if (!FollowUpWords.Any(word => ContainsWord(message, word)))
@@ -323,7 +304,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return "Happy to go further! Which topic should we start with? " + TopicList();
         }
 
-        
         private string? HandleGeneralTip(string message)
         {
             return message.Contains("tip") ? PickRandom(_generalTips) : null;
@@ -342,7 +322,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return choice;
         }
 
-        
         private string? DetectMood(string message)
         {
             foreach (KeyValuePair<string, string[]> mood in _moodWords)
@@ -355,7 +334,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return null;
         }
 
-        
         private string? FindTopic(string message)
         {
             foreach (string key in _topics.Keys)
@@ -368,13 +346,11 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return null;
         }
 
-        
         private string NameSuffix()
         {
             return _user != null ? $", {_user.Name}" : "";
         }
 
-        
         private string WithRecall(string reply)
         {
             _replyCount++;
@@ -387,7 +363,6 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return reply;
         }
 
-        
         private string DescribeMemory()
         {
             if (_user == null)
@@ -408,13 +383,11 @@ namespace CyberSecurity_Awareness_Chatbot.Bot
             return summary;
         }
 
-       
         private string TopicList()
         {
             return "You can ask about: " + string.Join(", ", _topics.Keys) + ".";
         }
 
-       
         private static bool ContainsWord(string? text, string word)
         {
             if (string.IsNullOrWhiteSpace(text))

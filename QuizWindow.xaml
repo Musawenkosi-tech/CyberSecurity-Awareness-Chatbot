@@ -1,0 +1,39 @@
+﻿<Window x:Class="CyberSecurity_Awareness_Chatbot.QuizWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cybersecurity Quiz" Height="600" Width="680"
+        WindowStartupLocation="CenterOwner"
+        Background="#F3F4F6">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#1E3A8A" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+            <TextBlock Text="CYBERSECURITY QUIZ" FontSize="20" FontWeight="Bold"
+                       Foreground="White" HorizontalAlignment="Center"/>
+        </Border>
+
+        <TextBlock x:Name="ProgressText" Grid.Row="1" FontSize="13" Foreground="#475569" Margin="4,0,0,8"/>
+
+        <Border Grid.Row="2" Background="White" BorderBrush="#D1D5DB" BorderThickness="1"
+                CornerRadius="10" Padding="18">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock x:Name="QuestionText" FontSize="18" FontWeight="SemiBold"
+                               Foreground="#1F2937" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                    <StackPanel x:Name="OptionsPanel"/>
+                    <TextBlock x:Name="FeedbackText" FontSize="14" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <Button x:Name="NextButton" Grid.Row="3" Content="Next question" HorizontalAlignment="Right"
+                Width="150" Padding="8,8" Margin="0,12,0,0" FontSize="14" FontWeight="SemiBold"
+                Background="#2563EB" Foreground="White" BorderThickness="0"
+                Visibility="Collapsed" Click="NextButton_Click"/>
+    </Grid>
+</Window>
