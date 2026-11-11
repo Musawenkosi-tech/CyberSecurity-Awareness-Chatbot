@@ -1,48 +1,42 @@
-# Cybersecurity Awareness Chatbot (Part 3)
+# Cybersecurity Awareness Chatbot POE
 
-**Module:** PROG6221 – Programming 2A | **Author:** Musawenkosi Mhlambi
+**Module:** PROG6221 – Programming 2A
+**Student:** Musawenkosi Mhlambi
 
-A Windows desktop chatbot (WPF, C#, .NET 8) that teaches South African citizens how to stay safe online. Part 1 was the console bot, Part 2 added the GUI, keyword recognition, memory and sentiment, and **Part 3** adds a MySQL task assistant with reminders, a cybersecurity quiz, an activity log and simple natural language processing (NLP).
+## What is this project?
 
+This is a chatbot that teaches South African citizens how to stay safe online. It started as a console app in Part 1, became a desktop app with a window in Part 2, and in Part 3 I added tasks, reminders, a quiz and smarter understanding of what the user types.
 
----
+It is built with **C#**, **WPF** and **.NET 8**. The tasks are saved in a **MySQL** database.
 
-## Features
+## What can it do?
 
-| Feature | What it does |
-|---|---|
-| **GUI** | WPF window with a header, chat bubbles (bot on the left, you on the right), a typing effect, and **Clear**, **History**, **Tasks** and **Quiz** buttons |
-| **Voice greeting** | A recorded WAV welcome message plays on start-up |
-| **Keyword recognition** | Recognises 8 topics: password, phishing, browsing, malware, privacy, scam, ransomware, social engineering |
-| **Random responses, flow and memory** | Several answers per topic, follow-ups like "tell me more", and it remembers your name and favourite topic |
-| **Sentiment detection** | Spots *worried*, *frustrated* and *curious* messages and replies with empathy and a tip |
-| **Task assistant (MySQL)** | Add, list, complete and delete cybersecurity tasks from the chat or the Tasks window. Tasks are stored in a MySQL database |
-| **Reminders** | Set a reminder in words ("in 3 days", "tomorrow", "next week", "15 December"). A timer checks every 30 seconds and the bot posts a message when a task is due |
-| **Quiz mini-game** | 12 questions (multiple choice and true/false), one at a time, instant feedback with an explanation, score tracking and a final message |
-| **Activity log** | Records what the bot has done. Ask "What have you done for me?" and type "show more" to see older entries |
-| **NLP simulation** | Understands different ways of asking for the same thing, using regex rewrite rules and synonym lists |
+**From Part 1 and Part 2**
+- Asks for your name and greets you, with a voice greeting when the app starts.
+- Answers questions about 8 topics: passwords, phishing, safe browsing, malware, privacy, scams, ransomware and social engineering.
+- Gives a different answer each time you ask, and follows up when you say "tell me more".
+- Remembers your name and your favourite topic.
+- Notices if you sound worried, frustrated or curious and replies kindly.
+- Has Clear and History buttons, and shows the bot's messages on the left and yours on the right.
 
----
+**New in Part 3**
+- **Task assistant:** add, list, complete and delete cybersecurity tasks. They are saved in MySQL.
+- **Reminders:** say things like "in 3 days", "tomorrow" or "15 December" and the bot reminds you when the time comes.
+- **Activity log:** ask "What have you done for me?" to see a list of what the bot did.
+- **Quiz:** 12 questions (multiple choice and true/false) with feedback after every answer and a score at the end.
+- **Natural language processing (NLP):** the bot understands different ways of asking for the same thing.
 
-## Requirements
+## How to run it
 
-- Windows 10 or 11
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Visual Studio 2022 with the **.NET desktop development** workload
-- [MySQL Community Server 8](https://dev.mysql.com/downloads/mysql/) and MySQL Workbench (needed for the task assistant only; the rest of the chatbot works without it)
+You need **Windows**, **Visual Studio 2022** (with the ".NET desktop development" option) and **MySQL**. MySQL is only needed for tasks. The rest of the chatbot works without it.
 
----
-
-## Setup
-
-### 1. Clone the repository
+**1. Get the code**
 ```
 git clone https://github.com/Musawenkosi-tech/CyberSecurity-Awareness-Chatbot.git
 ```
 
-### 2. Create the database
-Open MySQL Workbench, connect to your local server and run these statements **one at a time** (Ctrl+Enter):
-
+**2. Create the database**
+Open MySQL Workbench and run these one at a time:
 ```sql
 CREATE DATABASE IF NOT EXISTS cyber_chatbot;
 
@@ -56,134 +50,85 @@ CREATE TABLE IF NOT EXISTS cyber_chatbot.tasks (
 );
 ```
 
-### 3. Add your database settings
-The password is kept out of Git on purpose.
-1. Copy `dbsettings.example.json` and rename the copy to `dbsettings.json` in the project folder (next to the `.csproj`).
-2. Open it and put your own MySQL password in:
+**3. Add your database password**
+1. Find `dbsettings.example.json` in the project folder.
+2. Make a copy and rename the copy to `dbsettings.json`.
+3. Open it and replace the text after `"Password":` with your own MySQL password.
 
-```json
-{
-  "Server": "localhost",
-  "Port": 3306,
-  "Database": "cyber_chatbot",
-  "User": "root",
-  "Password": "YOUR_PASSWORD_HERE"
-}
-```
+The real `dbsettings.json` is never uploaded to GitHub, so my password stays private.
 
-`dbsettings.json` is listed in `.gitignore` and is copied next to the program when you build.
+**4. Start the app**
+Open the solution in Visual Studio and press **F5**. If MySQL is not set up yet, the app still opens and the grey note at the top tells you what went wrong.
 
-### 4. Run
-Open the solution in Visual Studio and press **F5**. Turn your volume on to hear the greeting.
+## How to use it
 
-If MySQL is not running or `dbsettings.json` is missing, the chatbot still starts. It shows a note that tasks are unavailable.
+Type your name first. After that you can try:
 
----
+| Type this | What happens |
+|---|---|
+| `phishing` or `how do I make a strong password` | The bot gives a tip about that topic |
+| `tell me more` | Another tip about the same topic |
+| `add task - review privacy settings` | Saves a task and asks if you want a reminder |
+| `remind me to update my password tomorrow` | Saves the task with a reminder |
+| `show tasks` | Lists your tasks |
+| `complete task 1` / `delete task 2` | Marks a task as done or removes it |
+| `quiz` or the **Quiz** button | Starts the quiz |
+| `what have you done for me?` | Shows the activity log |
+| `exit` | Ends the chat |
 
-## How to use the chatbot
-
-1. Enter your **name** when asked.
-2. Ask about a topic: `phishing`, `how do I make a strong password`, `what is ransomware`.
-3. Manage tasks and reminders:
-   - `add task - review privacy settings`
-   - `remind me to update my password tomorrow`
-   - `show tasks`, `complete task 1`, `delete task 2`
-4. Take the quiz: click **Quiz** or type `quiz`.
-5. Ask `what have you done for me?` to see the activity log.
-6. Type `exit` to leave.
-
-### Example conversation
+### Example chat
 
 ```
 You:  Musa
 Bot:  Hello, Musa! Ask me about passwords, phishing, ... or 'quiz'.
 
-Musa: Add a task - review my privacy settings
-Bot:  Task added: 'Review my privacy settings'. Review account privacy settings to ensure your data is protected.
+Musa: add task - review privacy settings
+Bot:  Task added: 'Review privacy settings'. Review account privacy settings to ensure your data is protected.
       Would you like a reminder?
 
 Musa: yes, in 3 days
 Bot:  Got it! I'll remind you in 3 days.
 
-Musa: don't let me forget to back up my files tomorrow
-Bot:  Reminder set for 'Back up my files' tomorrow.
-
 Musa: challenge me
 Bot:  Great idea! Let's test your cybersecurity knowledge. Opening the quiz now...
-Bot:  Quiz complete! You scored 10 out of 12. Great job! You're a cybersecurity pro!
-
-Musa: what have you done for me?
-Bot:  Here's a summary of recent actions:
-      1. Quiz completed - scored 10/12
-      2. ...
 ```
 
-### NLP examples
+## How does the NLP work?
 
-| You type | The bot understands it as |
+I kept it simple so I can explain it. It is not machine learning, just two ideas:
+
+1. **Rewrite rules.** The bot cleans the message (lowercase, no punctuation) and then uses patterns to turn different phrasings into a command it already knows. For example:
+   - "don't let me forget to back up my files" becomes "remind me to back up my files"
+   - "challenge me" becomes "quiz"
+   - "what's on my list" becomes "show tasks"
+2. **Synonym lists.** Each topic has a list of related words, so "virus", "trojan" and "spyware" all lead to the malware topic.
+
+If the bot still does not understand, it suggests things you can ask instead of just giving up.
+
+## How is the code organised?
+
+```
+Bot/        the chatbot's "brain" (chat replies, tasks, quiz questions, activity log, NLP)
+Models/     simple data classes (User, TaskItem, QuizQuestion)
+Services/   database code (settings and queries) and the voice greeting
+*.xaml      the windows: main chat, tasks, quiz
+```
+
+A few things I want to point out:
+- **Delegates:** every message goes through a list of small handler methods. The first one that has an answer replies.
+- **Collections:** topics are stored in a `Dictionary`, and tasks, quiz questions and the activity log are stored in `List`s.
+- **Safe SQL:** the database code uses parameters, so what the user types can never break the query.
+
+## GitHub, CI and releases
+
+Every time I push, GitHub Actions builds the project to check that it still compiles.
+
+<!-- TODO: add a screenshot of the green CI run, for example ![CI passing](docs/ci-green.png) -->
+
+| Release | What was added |
 |---|---|
-| `Don't let me forget to back up my files` | a reminder request |
-| `Jot down review my privacy settings` | add a task |
-| `What's on my list?` | show tasks |
-| `I finished task 3` | complete task 3 |
-| `Challenge me` / `test me` | start the quiz |
-| `Is my laptop infected with a virus?` | the malware topic |
-| `Is wifi at the mall safe?` | the browsing topic |
+| v3.0 | Task assistant with MySQL, reminders and the activity log |
+| v3.1 | Cybersecurity quiz |
+| v3.2 | NLP and final polish |
 
----
-
-## Project structure
-
-```
-CyberSecurity_Awareness_Chatbot/
-├── App.xaml / App.xaml.cs               Application entry point
-├── MainWindow.xaml / .xaml.cs           Chat window, reminder timer, quiz and tasks buttons
-├── TasksWindow.xaml / .xaml.cs          Table view of tasks (complete, delete, refresh)
-├── QuizWindow.xaml / .xaml.cs           Quiz screen with feedback and score
-├── Bot/
-│   ├── ChatBot.cs                       The chatbot "brain" (delegate handler pipeline)
-│   ├── TaskAssistant.cs                 Task and reminder commands, date parsing
-│   ├── ActivityLog.cs                   Activity log with "show more"
-│   ├── NlpEngine.cs                     Regex rewrite rules and topic synonyms
-│   └── QuizBank.cs                      The 12 quiz questions
-├── Models/
-│   ├── User.cs                          Name, favourite topic, topics discussed
-│   ├── TaskItem.cs                      One task from the database
-│   └── QuizQuestion.cs                  One quiz question
-├── Services/
-│   ├── AudioService.cs                  Voice greeting
-│   ├── DatabaseSettings.cs              Reads dbsettings.json
-│   └── TaskRepository.cs                All MySQL queries (parameterised)
-└── Audio/welcome.wav
-```
-
-### How the code works
-
-- **Delegates:** `ChatBot.GetResponse` passes the message through a list of `ResponseHandler` delegates (tasks, activity log, quiz, small talk, social, memory, sentiment, topic, confusion, follow-up, general tip). The first handler that returns a reply wins; a handler returns `null` when the message isn't for it.
-- **NLP:** `NlpEngine` first cleans the text. A list of regex rules then rewrites many phrasings into simple commands (for example "jot down X" becomes "add task to X"). Each topic also has a synonym list. Both are plain lists and dictionaries, so the logic is easy to follow.
-- **Tasks:** `TaskAssistant` finds the intent (add, list, complete, delete), extracts the title with a regex and parses dates such as "in 3 days" or "15 December". `TaskRepository` runs the SQL with parameters, so user text is never pasted into a query.
-- **Reminders:** a `DispatcherTimer` in `MainWindow` checks the database every 30 seconds and posts a message for each due task once.
-- **Quiz:** questions are stored in a `List<QuizQuestion>`, shuffled each time, and shown one at a time with a score counter.
-- **Activity log:** every action adds a timestamped line to a list, shown five at a time (newest first).
-- **Collections used:** `Dictionary<string, List<string>>` for topics, `List<T>` for tasks, questions and the log, and `HashSet<int>` for reminders already shown.
-
----
-
-## Continuous Integration
-
-A GitHub Actions workflow (`.github/workflows/dotnet.yml`) restores and builds the project on every push. It does not need a database.
-
-<!-- TODO: add a screenshot of a green CI run, e.g. ![CI passing](docs/ci-green.png) -->
-
-## Releases
-
-| Version | Notes |
-|---|---|
-| **v3.0** | <!-- TODO: MySQL task assistant, reminders, Tasks window, activity log --> |
-| **v3.1** | <!-- TODO: cybersecurity quiz mini-game --> |
-| **v3.2** | <!-- TODO: NLP simulation, final integration and README --> |
-
-## Previous parts
-
-- **Part 1** (console version): tag `part1-final` / release `v1.0`
-- **Part 2** (WPF GUI): release `v2.x`
+Older parts: Part 1 is the `part1` tag and Part 2 is the `part2-final` tag.
